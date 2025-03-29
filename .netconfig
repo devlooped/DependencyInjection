@@ -42,9 +42,9 @@
 	weak
 [file ".github/workflows/build.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/build.yml
-	sha = 06e898ccba692566ebf845fa7c8833ac6c318c0a
+	sha = 931da830a361d69b419887a0edbb424517ca75fc
 
-	etag = 0a4b3f0a875cd8c9434742b4046558aecf610d3fa3d490cfd2099266e95e9195
+	etag = ea785d08ab67abc57629649b0a418a515dc58248de12668f3616908873f8ecc6
 	weak
 [file ".github/workflows/changelog.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/changelog.yml
@@ -54,9 +54,9 @@
 	weak
 [file ".github/workflows/dotnet-file.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/dotnet-file.yml
-	sha = 59aaf432369b5ea597831d4feec5a6ac4024c2e3
+	sha = 8fa147d4799d73819040736c399d0b1db2c2d86c
 
-	etag = 1374e3f8c9b7af69c443605c03f7262300dcb7d783738d9eb9fe84268ed2d10c
+	etag = 1ca805a23656e99c03f9d478dba8ccef6e571f5de2ac0e9bb7e3c5216c99a694
 	weak
 [file ".github/workflows/includes.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/includes.yml
@@ -66,9 +66,9 @@
 	weak
 [file ".github/workflows/publish.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/publish.yml
-	sha = 06e898ccba692566ebf845fa7c8833ac6c318c0a
+	sha = 931da830a361d69b419887a0edbb424517ca75fc
 
-	etag = 2f64f75ad01f735fd05290370fb8a826111ac8dd7e74ce04226bb627a54a62ba
+	etag = 62a13b8b34b1b265cdc045bf7ea001dee7bdc184cba7abfea5fe77283cf419a6
 	weak
 [file ".gitignore"]
 	url = https://github.com/devlooped/oss/blob/main/.gitignore
@@ -99,9 +99,9 @@
 	weak
 [file "src/Directory.Build.props"]
 	url = https://github.com/devlooped/oss/blob/main/src/Directory.Build.props
-	sha = b76de49afb376aa48eb172963ed70663b59b31d3
+	sha = 2fff747a9673b499c99f2da183cdd5263fdc9333
 
-	etag = c8b56f3860cc7ccb8773b7bd6189f5c7a6e3a2c27e9104c1ee201fbdc5af9873
+	etag = 0fccddf04f282fe98122ab2610dc2972c205a521254559bf013655c6271b0017
 	weak
 [file "src/Directory.Build.targets"]
 	url = https://github.com/devlooped/oss/blob/main/src/Directory.Build.targets
@@ -213,19 +213,19 @@
 	weak
 [file "src/SponsorLink/SponsorLink.Analyzer.Tests.targets"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/SponsorLink.Analyzer.Tests.targets
-	sha = df44ccc14cc11b5674c55aca9ba8596bdbcf8438
+	sha = 1454a8f481610a6cf33adfc6082a19421bbed43c
 
 
 
-	etag = a3e9cbcc227dd56a7bed236eaded136f1b80f9f36a4fabce8be695ee844bf881
+	etag = a06c8e06228a859eb15ba9ffad88c15874048a2ee23e515029fc36a78df1349c
 	weak
 [file "src/SponsorLink/SponsorLink.Analyzer.targets"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/SponsorLink.Analyzer.targets
-	sha = 0f551e3be564625ee4d078649c55363bf35954ba
+	sha = 1454a8f481610a6cf33adfc6082a19421bbed43c
 
 
 
-	etag = 7276d81830e29f8d5f3e27ee62cadaf7aef02a0162b9a05c88e1daef9cc4875e
+	etag = 0b4028f3cbc6463257b741106186689bdc7d1b20af5d1d0075e81e6d4fbe8d7b
 	weak
 [file "src/SponsorLink/SponsorLink/AnalyzerOptionsExtensions.cs"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/SponsorLink/AnalyzerOptionsExtensions.cs
@@ -278,10 +278,10 @@
 	weak
 [file "src/SponsorLink/SponsorLink/SponsorLink.csproj"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/SponsorLink/SponsorLink.csproj
-	sha = 0f551e3be564625ee4d078649c55363bf35954ba
+	sha = 2de6c983fd620ac8a268327c247f1ba4351ba29a
 
 
-	etag = 27db7c8288b721804b52a719a9218ab1198f4db5b7a7d06bce4e1770def2d4a0
+	etag = 0d1ba307ebf2ffa53af749afc408c738566cf1a334eb7df16dc64cb243f6233d
 	weak
 [file "src/SponsorLink/SponsorLink/SponsorLinkAnalyzer.cs"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/SponsorLink/SponsorLinkAnalyzer.cs
@@ -381,10 +381,10 @@
 	weak
 [file "src/SponsorLink/Tests/Tests.csproj"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/Tests/Tests.csproj
-	sha = 0f551e3be564625ee4d078649c55363bf35954ba
+	sha = 2de6c983fd620ac8a268327c247f1ba4351ba29a
 
 
-	etag = 7d27c17944c61da196f11f904383b25b3f40579fbeb0cacb367bf05ec184ad7f
+	etag = 3fc99ed4d45124df055e60a0b89aedc46286c973c05859a5cada0daa0457efbd
 	weak
 [file "src/SponsorLink/Tests/keys/kzu.key"]
 	url = https://github.com/devlooped/SponsorLink/blob/main/samples/dotnet/Tests/keys/kzu.key
@@ -442,8 +442,8 @@
 	weak
 [file ".github/workflows/dotnet-file-core.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/dotnet-file-core.yml
-	sha = 875284ba5d565f529aba2f5d24ab8ed27c1d1c79
-	etag = 8de1d974bf73b1945b5c8be684c3a0b7364114a0d795c9d68837aed9b3aff331
+	sha = af171b7a87382ee665ba6fbaeb5f38a3551e1c23
+	etag = 5ce370f52933ab2a4cd50f2b410e842fc5eab23088db2bf98b6c4d4ccdc9022b
 	weak
 [file "src/nuget.config"]
 	url = https://github.com/devlooped/oss/blob/main/src/nuget.config
