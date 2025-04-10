@@ -124,7 +124,8 @@ public class IncrementalGenerator : IIncrementalGenerator
             var attrName = attr.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             return attrName == "global::System.Composition.ExportAttribute" ||
                 attrName == "global::System.ComponentModel.Composition.ExportAttribute";
-        };
+        }
+        ;
 
         // NOTE: we recognize the attribute by name, not precise type. This makes the generator 
         // more flexible and avoids requiring any sort of run-time dependency.
