@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.props" />
 
@@ -13,10 +13,10 @@
     <PackageReference Include="xunit" Version="2.7.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="6.0.0" />
-    <PackageReference Include="System.Composition.AttributedModel" Version="8.0.0" />
-    <PackageReference Include="System.Composition.Hosting" Version="8.0.0" />
-    <PackageReference Include="System.Composition.TypedParts" Version="8.0.0" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="9.0.4" />
+    <PackageReference Include="System.Composition.AttributedModel" Version="9.0.4" />
+    <PackageReference Include="System.Composition.Hosting" Version="9.0.4" />
+    <PackageReference Include="System.Composition.TypedParts" Version="9.0.4" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" GeneratePathProperty="true" />
   </ItemGroup>
