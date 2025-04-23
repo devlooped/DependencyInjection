@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2.1.0-rc.4](https://github.com/devlooped/DependencyInjection/tree/v2.1.0-rc.4) (2025-04-23)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0-rc.3...v2.1.0-rc.4)
+
+:bug: Fixed bugs:
+
+- Don't emit registrations with generics that don't satisfy constraints [\#148](https://github.com/devlooped/DependencyInjection/pull/148) (@kzu)
+- Fix path of compile items within package [\#147](https://github.com/devlooped/DependencyInjection/pull/147) (@kzu)
+- Add extra check for non-null ReducedFrom [\#146](https://github.com/devlooped/DependencyInjection/pull/146) (@kzu)
+- Make sure we don't attempt to analyze methods without a symbol [\#145](https://github.com/devlooped/DependencyInjection/pull/145) (@kzu)
+
+:hammer: Other:
+
+- Add support to register internal classes [\#107](https://github.com/devlooped/DependencyInjection/issues/107)
+
 ## [v2.1.0-rc.3](https://github.com/devlooped/DependencyInjection/tree/v2.1.0-rc.3) (2024-12-06)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0-rc.2...v2.1.0-rc.3)
