@@ -452,6 +452,9 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             foreach (var iface in type.AllInterfaces)
             {
+                if (!compilation.HasImplicitConversion(type, iface))
+                    continue;
+
                 var ifaceName = iface.ToFullName(compilation);
                 if (!registered.Contains(ifaceName))
                 {
@@ -476,9 +479,11 @@ public class IncrementalGenerator : IIncrementalGenerator
                         baseType = baseType.BaseType;
                     }
 
-                    foreach (var candidate in candidates.Select(x => iface.ConstructedFrom.Construct(x))
+                    foreach (var candidate in candidates
+                        .Where(x => x.SatisfiesConstraints(iface.TypeParameters[0]))
+                        .Select(x => iface.ConstructedFrom.Construct(x))
+                        .Where(x => x != null && compilation.HasImplicitConversion(type, x))
                         .ToImmutableHashSet(SymbolEqualityComparer.Default)
-                        .Where(x => x != null)
                         .Select(x => x!.ToFullName(compilation)))
                     {
                         if (!registered.Contains(candidate))
