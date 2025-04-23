@@ -59,7 +59,7 @@ public class AddServicesAnalyzer : DiagnosticAnalyzer
                     .OfType<InvocationExpressionSyntax>()
                     .Select(invocation => new { Invocation = invocation, semantic.GetSymbolInfo(invocation, semanticContext.CancellationToken).Symbol })
                     // It has to be user-provided code, not our own extensions/overloads.
-                    .Where(x => !IsDDICode(x.Invocation, semantic))
+                    .Where(x => !IsDDICode(x.Invocation, semantic) && x.Symbol != null)
                     .Select(x => new { x.Invocation, Method = (IMethodSymbol)x.Symbol! });
 
                 bool IsServiceCollectionExtension(IMethodSymbol method) => method.IsExtensionMethod &&
