@@ -28,7 +28,7 @@
   <ItemGroup>
     <None Update="Devlooped.Extensions.DependencyInjection.props" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Update="Devlooped.Extensions.DependencyInjection.targets" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
-    <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0\compile" />
+    <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <EmbeddedCode Include="compile\*.cs" />
   </ItemGroup>
 
