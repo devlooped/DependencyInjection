@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PackageProjectUrl>https://github.com/devlooped/DependencyInjection.Attributed</PackageProjectUrl>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
 
 </Project>
