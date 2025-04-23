@@ -62,7 +62,8 @@ public class AddServicesAnalyzer : DiagnosticAnalyzer
                     .Where(x => !IsDDICode(x.Invocation, semantic) && x.Symbol != null)
                     .Select(x => new { x.Invocation, Method = (IMethodSymbol)x.Symbol! });
 
-                bool IsServiceCollectionExtension(IMethodSymbol method) => method.IsExtensionMethod &&
+                bool IsServiceCollectionExtension(IMethodSymbol method) => method != null &&
+                        method.IsExtensionMethod &&
                         method.ReducedFrom != null &&
                         method.ReducedFrom.Parameters.Length > 0 &&
                         method.ReducedFrom.Parameters[0].Type.Equals(servicesCollection, SymbolEqualityComparer.Default);
@@ -80,6 +81,7 @@ public class AddServicesAnalyzer : DiagnosticAnalyzer
                 if (!usesAddServices &&
                     invocations.Where(x =>
                         IsServiceCollectionExtension(x.Method) &&
+                        x.Method.ReducedFrom != null &&
                         x.Method.ReducedFrom!.GetAttributes().Any(attr => attr.AttributeClass?.Name == "DDIAddServicesAttribute"))
                     .Any())
                 {
