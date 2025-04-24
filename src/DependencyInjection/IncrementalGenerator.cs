@@ -86,10 +86,11 @@ public class IncrementalGenerator : IIncrementalGenerator
         {
             (var compilation, var options) = x;
 
-            // We won't add any registrations in this case.            
-            if (!options.GlobalOptions.TryGetValue("build_property.AddServicesExtension", out var value) ||
+            // We won't add any registrations in these cases.            
+            if (options.IsDesignTimeBuild() ||
+                !options.GlobalOptions.TryGetValue("build_property.AddServicesExtension", out var value) ||
                 !bool.TryParse(value, out var addServices) || !addServices)
-                return Enumerable.Empty<INamedTypeSymbol>();
+                return [];
 
             var visitor = new TypesVisitor(s => compilation.IsSymbolAccessible(s), c);
             compilation.GlobalNamespace.Accept(visitor);
