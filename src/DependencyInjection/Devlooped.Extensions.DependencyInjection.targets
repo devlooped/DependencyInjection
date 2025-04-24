@@ -14,6 +14,8 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="AddServiceAttribute" />
     <CompilerVisibleProperty Include="AddServicesExtension" />
+    <!-- To quickly exit if true -->
+    <CompilerVisibleProperty Include="DesignTimeBuild" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsEditor)' != 'true'">
