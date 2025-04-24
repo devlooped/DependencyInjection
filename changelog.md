@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2.1.0-rc.5](https://github.com/devlooped/DependencyInjection/tree/v2.1.0-rc.5) (2025-04-24)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0-rc.4...v2.1.0-rc.5)
+
+:sparkles: Implemented enhancements:
+
+- Don't generate any of the registrations during design-time [\#155](https://github.com/devlooped/DependencyInjection/pull/155) (@kzu)
+
+:twisted_rightwards_arrows: Merged:
+
+- Don't strong-name anything [\#149](https://github.com/devlooped/DependencyInjection/pull/149) (@kzu)
+
 ## [v2.1.0-rc.4](https://github.com/devlooped/DependencyInjection/tree/v2.1.0-rc.4) (2025-04-23)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0-rc.3...v2.1.0-rc.4)
