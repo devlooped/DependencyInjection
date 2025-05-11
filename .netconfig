@@ -430,9 +430,7 @@
 	weak
 [file ".github/workflows/dotnet-file-core.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/dotnet-file-core.yml
-	sha = af171b7a87382ee665ba6fbaeb5f38a3551e1c23
-	etag = 5ce370f52933ab2a4cd50f2b410e842fc5eab23088db2bf98b6c4d4ccdc9022b
-	weak
+	skip
 [file "src/nuget.config"]
 	url = https://github.com/devlooped/oss/blob/main/src/nuget.config
 	sha = 032439dbf180fca0539a5bd3a019f18ab3484b76
