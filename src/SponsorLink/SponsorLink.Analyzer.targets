@@ -28,50 +28,38 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)SponsorLink/*.cs"
-             Exclude="$(MSBuildThisFileDirectory)SponsorLink/bin/**;$(MSBuildThisFileDirectory)SponsorLink/obj/**"
-             Source="SponsorLink"/>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)SponsorLink/*.resx"
-                      Exclude="$(MSBuildThisFileDirectory)SponsorLink/bin/**;$(MSBuildThisFileDirectory)SponsorLink/obj/**"
-                      Source="SponsorLink"
-                      Type="Resx"
-                      ManifestResourceName="Devlooped.Sponsors.%(Filename)"/>
-    <EmbeddedResource Update="$(MSBuildThisFileDirectory)SponsorLink/Resources.resx"
-                      StronglyTypedManifestPrefix="Devlooped.Sponsors"
-                      StronglyTypedClassName="%(Filename)"
-                      StronglyTypedNamespace="Devlooped.Sponsors"
-                      StronglyTypedLanguage="$(Language)" />
-    <None Include="$(MSBuildThisFileDirectory)SponsorLink/buildTransitive/*.*"
-          Source="SponsorLink"
-          PackagePath="buildTransitive/%(Filename)%(Extension)"/>
+    <Compile Include="$(MSBuildThisFileDirectory)SponsorLink/*.cs" Exclude="$(MSBuildThisFileDirectory)SponsorLink/bin/**;$(MSBuildThisFileDirectory)SponsorLink/obj/**" Source="SponsorLink" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)SponsorLink/*.resx" Exclude="$(MSBuildThisFileDirectory)SponsorLink/bin/**;$(MSBuildThisFileDirectory)SponsorLink/obj/**" Source="SponsorLink" Type="Resx" ManifestResourceName="Devlooped.Sponsors.%(Filename)" />
+    <EmbeddedResource Update="$(MSBuildThisFileDirectory)SponsorLink/Resources.resx" StronglyTypedManifestPrefix="Devlooped.Sponsors" StronglyTypedClassName="%(Filename)" StronglyTypedNamespace="Devlooped.Sponsors" StronglyTypedLanguage="$(Language)" />
+    <None Include="$(MSBuildThisFileDirectory)SponsorLink/buildTransitive/*.*" Source="SponsorLink" PackagePath="buildTransitive/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(ShowSponsorLinkInProject) == 'true'">
-    <Compile Update="@(Compile -> WithMetadataValue('Source', 'SponsorLink'))">
+    <Compile Update="@(Compile -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Link>SponsorLink\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <EmbeddedResource Update="@(EmbeddedResource -> WithMetadataValue('Source', 'SponsorLink'))">
+    <EmbeddedResource Update="@(EmbeddedResource -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Link>SponsorLink\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </EmbeddedResource>
-    <Content Update="@(Content -> WithMetadataValue('Source', 'SponsorLink'))">
+    <Content Update="@(Content -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Link>SponsorLink\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
-    <None Update="@(None -> WithMetadataValue('Source', 'SponsorLink'))">
+    <None Update="@(None -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Link>SponsorLink\%(PackagePath)</Link>
     </None>
   </ItemGroup>
 
   <ItemGroup Condition="$(ShowSponsorLinkInProject) != 'true'">
-    <Compile Update="@(Compile -> WithMetadataValue('Source', 'SponsorLink'))">
+    <Compile Update="@(Compile -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Visible>false</Visible>
     </Compile>
-    <EmbeddedResource Update="@(EmbeddedResource -> WithMetadataValue('Source', 'SponsorLink'))">
+    <EmbeddedResource Update="@(EmbeddedResource -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Visible>false</Visible>
     </EmbeddedResource>
-    <Content Update="@(Content -> WithMetadataValue('Source', 'SponsorLink'))">
+    <Content Update="@(Content -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Visible>false</Visible>
     </Content>
-    <None Update="@(None -> WithMetadataValue('Source', 'SponsorLink'))">
+    <None Update="@(None -&gt; WithMetadataValue('Source', 'SponsorLink'))">
       <Visible>false</Visible>
     </None>
   </ItemGroup>
@@ -91,13 +79,12 @@
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
     <PackageReference Include="Humanizer.Core" Version="2.14.1" PrivateAssets="all" Pack="$(PackMergedAssemblies)" />
     <PackageReference Include="Humanizer.Core.es" Version="2.14.1" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.9.0" PrivateAssets="all" Pack="$(PackMergedAssemblies)" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.12.1" PrivateAssets="all" Pack="$(PackMergedAssemblies)" />
     <PackageReference Include="ILRepack" Version="2.0.37" PrivateAssets="all" Pack="false" />
   </ItemGroup>
 
   <Target Name="EmitFunding" BeforeTargets="CompileDesignTime;CoreCompile" Inputs="$(MSBuildAllProjects)" Outputs="$(IntermediateOutputPath)SponsorLink.g.cs">
-    <Warning Condition="'$(FundingPackageId)' == ''" Code="SL001" 
-             Text="Could not determine value of FundingPackageId (defaulted to PackageId). Defaulting it to FundingProduct ('$(FundingProduct)'). Make sure this matches the containing package id, or set an explicit value." />
+    <Warning Condition="'$(FundingPackageId)' == ''" Code="SL001" Text="Could not determine value of FundingPackageId (defaulted to PackageId). Defaulting it to FundingProduct ('$(FundingProduct)'). Make sure this matches the containing package id, or set an explicit value." />
     <PropertyGroup>
       <!-- Default to Product, which is most common for single-package products (i.e. Moq) -->
       <FundingPackageId Condition="'$(FundingPackageId)' == ''">$(FundingProduct)</FundingPackageId>
@@ -107,7 +94,7 @@
       <FundingAnalyzerPackageId Include="$(FundingPackageId)" />
     </ItemGroup>
     <ItemGroup>
-      <_FundingAnalyzerPackageId Include="@(FundingAnalyzerPackageId -> '&quot;%(Identity)&quot;')" />
+      <_FundingAnalyzerPackageId Include="@(FundingAnalyzerPackageId -&gt; '&quot;%(Identity)&quot;')" />
     </ItemGroup>
     <PropertyGroup>
       <_FundingPackageIds>@(_FundingAnalyzerPackageId, ',')</_FundingPackageIds>
@@ -143,34 +130,19 @@ partial class SponsorLink
       <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
     </Exec>
     <Message Importance="high" Text="Using installed dotnet-ilrepack v$(ILRepackOutput)" Condition="$(ExitCode) == '0'" />
-    <Exec Command="dotnet tool install -g dotnet-ilrepack"
-          Condition="$(ExitCode) != '0'" />
+    <Exec Command="dotnet tool install -g dotnet-ilrepack" Condition="$(ExitCode) != '0'" />
     <Exec Command="ilrepack --version" Condition="$(ExitCode) != '0'" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="ILRepackInstalledOutput" />
     </Exec>
     <Message Importance="high" Text="Installed dotnet-ilrepack v$(ILRepackInstalledOutput)" Condition="$(ExitCode) != '0'" />
   </Target>
 
-  <Target Name="ILRepack" AfterTargets="CoreCompile" BeforeTargets="CopyFilesToOutputDirectory"
-          Inputs="@(IntermediateAssembly -&gt; '%(FullPath)')"
-          Outputs="$(IntermediateOutputPath)ilrepack.txt"
-          Returns="@(MergedAssemblies)"
-          Condition="Exists(@(IntermediateAssembly -&gt; '%(FullPath)')) And '$(MergeAnalyzerAssemblies)' == 'true'">
+  <Target Name="ILRepack" AfterTargets="CoreCompile" BeforeTargets="CopyFilesToOutputDirectory" Inputs="@(IntermediateAssembly -&gt; '%(FullPath)')" Outputs="$(IntermediateOutputPath)ilrepack.txt" Returns="@(MergedAssemblies)" Condition="Exists(@(IntermediateAssembly -&gt; '%(FullPath)')) And '$(MergeAnalyzerAssemblies)' == 'true'">
     <ItemGroup>
-      <ReferenceCopyLocalAssemblies Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll' 
-        And !$([MSBuild]::ValueOrDefault('%(FileName)', '').EndsWith('.resources', StringComparison.OrdinalIgnoreCase))" />
-      <MergedAssemblies Include="@(ReferenceCopyLocalAssemblies)" Condition="
-        !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CodeAnalysis', StringComparison.OrdinalIgnoreCase)) And
-        !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CSharp', StringComparison.OrdinalIgnoreCase)) And
-        !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.', StringComparison.OrdinalIgnoreCase))"
-      />
+      <ReferenceCopyLocalAssemblies Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'          And !$([MSBuild]::ValueOrDefault('%(FileName)', '').EndsWith('.resources', StringComparison.OrdinalIgnoreCase))" />
+      <MergedAssemblies Include="@(ReferenceCopyLocalAssemblies)" Condition="         !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CodeAnalysis', StringComparison.OrdinalIgnoreCase)) And         !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CSharp', StringComparison.OrdinalIgnoreCase)) And         !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.', StringComparison.OrdinalIgnoreCase))" />
       <!-- Brings in System/Microsoft.IdentityModel, System.Text.Encodings.Web, System.Text.Json, Humanizer  -->
-      <MergedAssemblies Include="@(ReferenceCopyLocalAssemblies)" Condition="
-        $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.IdentityModel', StringComparison.OrdinalIgnoreCase)) Or
-        $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.IdentityModel', StringComparison.OrdinalIgnoreCase)) Or
-        $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.Text', StringComparison.OrdinalIgnoreCase)) Or
-        $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Humanizer', StringComparison.OrdinalIgnoreCase))"
-      />
+      <MergedAssemblies Include="@(ReferenceCopyLocalAssemblies)" Condition="         $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.IdentityModel', StringComparison.OrdinalIgnoreCase)) Or         $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.IdentityModel', StringComparison.OrdinalIgnoreCase)) Or         $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('System.Text', StringComparison.OrdinalIgnoreCase)) Or         $([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Humanizer', StringComparison.OrdinalIgnoreCase))" />
     </ItemGroup>
     <ItemGroup>
       <ReferenceCopyLocalDirs Include="@(ReferenceCopyLocalPaths -&gt; '%(RootDir)%(Directory)')" />
@@ -190,7 +162,7 @@ partial class SponsorLink
       <!--<ILRepackArgs>$(ILRepackArgs) "/lib:$(NetstandardDirectory)"</ILRepackArgs> -->
       <!-- This is needed for ilrepack to find netstandard.dll, which is referenced by the System.Text.Json assembly -->
     </PropertyGroup>
-    <Exec Command='ilrepack $(ILRepackArgs)' WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" StandardErrorImportance="high" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low" ConsoleToMSBuild="true" ContinueOnError="true">
+    <Exec Command="ilrepack $(ILRepackArgs)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" StandardErrorImportance="high" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low" ConsoleToMSBuild="true" ContinueOnError="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="ILRepackOutput" />
       <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
     </Exec>
@@ -220,13 +192,9 @@ partial class SponsorLink
   </Target>
 
   <!-- Make sure dependencies are available in the package when not merging (i.e. local dev)  -->
-  <Target Name="PackCopyLocalLockFileAssemblies" Condition="'$(MergeAnalyzerAssemblies)' != 'true'" 
-          BeforeTargets="GetPackageContents" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
+  <Target Name="PackCopyLocalLockFileAssemblies" Condition="'$(MergeAnalyzerAssemblies)' != 'true'" BeforeTargets="GetPackageContents" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
     <ItemGroup>
-      <PackageFile Include="@(ReferenceCopyLocalPathsOutputGroupOutput)" Condition="
-        !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CodeAnalysis', StringComparison.OrdinalIgnoreCase)) And
-        !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CSharp', StringComparison.OrdinalIgnoreCase))"
-                   PackFolder="$(PackFolder)" />
+      <PackageFile Include="@(ReferenceCopyLocalPathsOutputGroupOutput)" Condition="         !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CodeAnalysis', StringComparison.OrdinalIgnoreCase)) And         !$([MSBuild]::ValueOrDefault('%(FileName)', '').StartsWith('Microsoft.CSharp', StringComparison.OrdinalIgnoreCase))" PackFolder="$(PackFolder)" />
     </ItemGroup>
   </Target>
 
