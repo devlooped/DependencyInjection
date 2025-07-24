@@ -39,7 +39,7 @@
   <Target Name="SL" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun" DependsOnTargets="$(SLDependsOn)">
     <ItemGroup>
       <!-- Make manifests visible to analyzers -->
-      <AdditionalFiles Include="@(SponsorManifest -> Distinct())" />
+      <AdditionalFiles Include="@(SponsorManifest -&gt; Distinct())" />
     </ItemGroup>
   </Target>
 
@@ -47,15 +47,13 @@
     <!-- Makes direct dependencies visible to the compiler, so that sponsoring checks can selectively skip indirectly referenced analyzer -->
     <!-- An analyzer can check for the presense of a global property named after the package id (which will contain the instaled version) -->
     <ItemGroup>
-      <DirectDependency Include="@(_RestoreGraphEntry -> HasMetadata('Id'))"
-                        Condition="'%(_RestoreGraphEntry.Type)' == 'Dependency' and
-                                   '%(_RestoreGraphEntry.ProjectUniqueName)' == '$(MSBuildProjectFullPath)'">
+      <DirectDependency Include="@(_RestoreGraphEntry -&gt; HasMetadata('Id'))" Condition="'%(_RestoreGraphEntry.Type)' == 'Dependency' and                                    '%(_RestoreGraphEntry.ProjectUniqueName)' == '$(MSBuildProjectFullPath)'">
         <Id>$([MSBuild]::ValueOrDefault('%(_RestoreGraphEntry.Id)', '').Replace('.', '_'))</Id>
       </DirectDependency>
-      <CompilerVisibleProperty Include="@(DirectDependency -> '%(Id)')" />
+      <CompilerVisibleProperty Include="@(DirectDependency -&gt; '%(Id)')" />
     </ItemGroup>
     <CreateProperty Condition="'@(DirectDependency)' != ''" Value="%(DirectDependency.VersionRange)">
-      <Output TaskParameter="Value" PropertyName="%(DirectDependency.Id)"/>
+      <Output TaskParameter="Value" PropertyName="%(DirectDependency.Id)" />
     </CreateProperty>
   </Target>
 
@@ -67,7 +65,7 @@
        <!--Used to determine installation time, for example, by looking up the analyzer assembly in additional files with: 
               build_metadata.Analyzer.ItemType = Analyzer
               build_metadata.Analyzer.NuGetPackageId = [PackageId] -->
-      <AdditionalFiles Include="@(Analyzer -> WithMetadataValue('NuGetPackageId', '$(_FundingPackageId)'))" />
+      <AdditionalFiles Include="@(Analyzer -&gt; WithMetadataValue('NuGetPackageId', '$(_FundingPackageId)'))" />
     </ItemGroup>
   </Target>
 
@@ -85,8 +83,7 @@
       <Output TaskParameter="Lines" ItemName="SLConfig" />
     </ReadLinesFromFile>
     <ItemGroup>
-      <SLConfigAutoSync Include="$([MSBuild]::ValueOrDefault(%(SLConfig.Identity), '').Trim())"
-                        Condition="$([MSBuild]::ValueOrDefault(%(SLConfig.Identity), '').Trim().StartsWith('autosync'))" />
+      <SLConfigAutoSync Include="$([MSBuild]::ValueOrDefault(%(SLConfig.Identity), '').Trim())" Condition="$([MSBuild]::ValueOrDefault(%(SLConfig.Identity), '').Trim().StartsWith('autosync'))" />
     </ItemGroup>
     <PropertyGroup>
       <SLConfigAutoSync>%(SLConfigAutoSync.Identity)</SLConfigAutoSync>

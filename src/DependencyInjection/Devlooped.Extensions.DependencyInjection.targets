@@ -1,5 +1,5 @@
 ﻿<Project>
-  <Import Project="..\..\buildTransitive\Devlooped.Sponsors.targets" Condition="Exists('..\..\buildTransitive\Devlooped.Sponsors.targets')"/>
+  <Import Project="..\..\buildTransitive\Devlooped.Sponsors.targets" Condition="Exists('..\..\buildTransitive\Devlooped.Sponsors.targets')" />
 
   <PropertyGroup>
     <!-- Backwards compatiblity -->
@@ -19,14 +19,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsEditor)' != 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)compile\ServiceAttribute*.cs" 
-             Visible="false"
-             PackageId="Devlooped.Extensions.DependencyInjection"
-             Condition="'$(AddServiceAttribute)' == 'true'" />
-    <Compile Include="$(MSBuildThisFileDirectory)compile\AddServices*.cs"
-             Visible="false"
-             PackageId="Devlooped.Extensions.DependencyInjection"
-             Condition="'$(AddServicesExtension)' == 'true'" />
+    <Compile Include="$(MSBuildThisFileDirectory)compile\ServiceAttribute*.cs" Visible="false" PackageId="Devlooped.Extensions.DependencyInjection" Condition="'$(AddServiceAttribute)' == 'true'" />
+    <Compile Include="$(MSBuildThisFileDirectory)compile\AddServices*.cs" Visible="false" PackageId="Devlooped.Extensions.DependencyInjection" Condition="'$(AddServicesExtension)' == 'true'" />
   </ItemGroup>
 
 </Project>
