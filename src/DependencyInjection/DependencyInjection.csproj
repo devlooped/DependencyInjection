@@ -38,13 +38,13 @@
     <FundingPackageId>$(PackageId)</FundingPackageId>
   </PropertyGroup>
 
-  <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')">
-    <Copy SourceFiles="@(EmbeddedCode)" DestinationFiles="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" SkipUnchangedFiles="true" />
+  <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -&gt; '$(IntermediateOutputPath)%(Filename).txt')">
+    <Copy SourceFiles="@(EmbeddedCode)" DestinationFiles="@(EmbeddedCode -&gt; '$(IntermediateOutputPath)%(Filename).txt')" SkipUnchangedFiles="true" />
    </Target>
 
   <Target Name="AddEmbeddedResources" DependsOnTargets="CopyEmbeddedCode" BeforeTargets="SplitResourcesByCulture">
     <ItemGroup>
-      <EmbeddedResource Include="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" Link="%(EmbeddedCode.Filename).txt" Type="Non-Resx" />
+      <EmbeddedResource Include="@(EmbeddedCode -&gt; '$(IntermediateOutputPath)%(Filename).txt')" Link="%(EmbeddedCode.Filename).txt" Type="Non-Resx" />
     </ItemGroup>
   </Target>
 
