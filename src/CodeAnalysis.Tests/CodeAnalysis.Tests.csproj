@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" />
+    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" AdditionalProperties="ILRepack=true" />
   </ItemGroup>
 
 </Project>
