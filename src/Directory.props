@@ -5,6 +5,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PackageProjectUrl>https://github.com/devlooped/DependencyInjection.Attributed</PackageProjectUrl>
     <SignAssembly>false</SignAssembly>
+    <Product>Devlooped.Extensions.DependencyInjection</Product>
   </PropertyGroup>
 
 </Project>
