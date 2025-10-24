@@ -21,4 +21,8 @@
     <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" AdditionalProperties="ILRepack=true" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedCode Include="..\DependencyInjection\compile\*.cs" />
+  </ItemGroup>
+  
 </Project>

@@ -4,10 +4,6 @@
     <DevloopedExtensionsDependencyInjectionVersion>42.42.42</DevloopedExtensionsDependencyInjectionVersion>
     <AddServiceAttribute Condition="'$(AddServiceAttribute)' == ''">true</AddServiceAttribute>
     <AddServicesExtension Condition="'$(AddServicesExtension)' == ''">true</AddServicesExtension>
-
-    <IsVisualStudio Condition="'$(ServiceHubLogSessionKey)' != '' or '$(VSAPPIDNAME)' != ''">true</IsVisualStudio>
-    <IsRider Condition="'$(RESHARPER_FUS_SESSION)' != '' or '$(IDEA_INITIAL_DIRECTORY)' != ''"></IsRider>
-    <IsEditor Condition="'$(IsVisualStudio)' == 'true' or '$(IsRider)' == 'true'">true</IsEditor>
   </PropertyGroup>
 
 </Project>
