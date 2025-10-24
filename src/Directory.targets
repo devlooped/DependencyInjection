@@ -1,5 +1,15 @@
 <Project InitialTargets="SetLocalVersion">
 
+  <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')">
+    <Copy SourceFiles="@(EmbeddedCode)" DestinationFiles="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="AddEmbeddedResources" DependsOnTargets="CopyEmbeddedCode" BeforeTargets="SplitResourcesByCulture">
+    <ItemGroup>
+      <EmbeddedResource Include="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" Link="%(EmbeddedCode.Filename).txt" Type="Non-Resx" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="SetLocalVersion" Condition="!$(CI)">
     <GetVersion>
       <Output TaskParameter="Version" PropertyName="Version" />

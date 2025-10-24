@@ -12,7 +12,7 @@
     <CompilerVisibleProperty Include="DesignTimeBuild" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsEditor)' != 'true'">
+  <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)compile\ServiceAttribute*.cs" 
              Visible="false"
              PackageId="Devlooped.Extensions.DependencyInjection"

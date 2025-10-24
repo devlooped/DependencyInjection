@@ -34,21 +34,9 @@
     <None Update="Devlooped.Extensions.DependencyInjection.props" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Update="Devlooped.Extensions.DependencyInjection.targets" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
-    
-    <EmbeddedCode Include="compile\*.cs" />
-  
+      
     <ILRepackInclude Include="Microsoft.Bcl.HashCode" />
   </ItemGroup>
-
-  <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')">
-    <Copy SourceFiles="@(EmbeddedCode)" DestinationFiles="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" SkipUnchangedFiles="true" />
-   </Target>
-
-  <Target Name="AddEmbeddedResources" DependsOnTargets="CopyEmbeddedCode" BeforeTargets="SplitResourcesByCulture">
-    <ItemGroup>
-      <EmbeddedResource Include="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" Link="%(EmbeddedCode.Filename).txt" Type="Non-Resx" />
-    </ItemGroup>
-  </Target>
 
   <Target Name="PokePackageVersion" BeforeTargets="GetPackageContents" DependsOnTargets="CopyFilesToOutputDirectory" Condition="'$(dotnet-nugetize)' == '' and Exists('$(OutputPath)\Devlooped.Extensions.DependencyInjection.props')">
     <XmlPoke XmlInputPath="$(OutputPath)\Devlooped.Extensions.DependencyInjection.props" Query="/Project/PropertyGroup/DevloopedExtensionsDependencyInjectionVersion" Value="$(PackageVersion)" />

@@ -60,29 +60,7 @@ public class IncrementalGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var compilation = context.CompilationProvider.Select((compilation, _) =>
-        {
-            // Add missing types as needed since we depend on the static generator potentially and can't 
-            // rely on its sources being added.
-            var parse = (CSharpParseOptions)compilation.SyntaxTrees.FirstOrDefault().Options;
-
-            if (compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.AddServicesNoReflectionExtension") is null)
-            {
-                compilation = compilation.AddSyntaxTrees(
-                    CSharpSyntaxTree.ParseText(ThisAssembly.Resources.AddServicesNoReflectionExtension.Text, parse));
-            }
-
-            if (compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceAttribute") is null)
-            {
-                compilation = compilation.AddSyntaxTrees(
-                    CSharpSyntaxTree.ParseText(ThisAssembly.Resources.ServiceAttribute.Text, parse),
-                    CSharpSyntaxTree.ParseText(ThisAssembly.Resources.ServiceAttribute_1.Text, parse));
-            }
-
-            return compilation;
-        });
-
-        var types = compilation.Combine(context.AnalyzerConfigOptionsProvider).SelectMany((x, c) =>
+        var types = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider).SelectMany((x, c) =>
         {
             (var compilation, var options) = x;
 
@@ -214,7 +192,7 @@ public class IncrementalGenerator : IIncrementalGenerator
             .Collect();
 
         // Project matching service types to register with the given lifetime.
-        var conventionServices = types.Combine(methodInvocations.Combine(compilation)).SelectMany((pair, cancellationToken) =>
+        var conventionServices = types.Combine(methodInvocations.Combine(context.CompilationProvider)).SelectMany((pair, cancellationToken) =>
         {
             var (typeSymbol, (registrations, compilation)) = pair;
             var results = ImmutableArray.CreateBuilder<ServiceSymbol>();
@@ -242,7 +220,7 @@ public class IncrementalGenerator : IIncrementalGenerator
             .SelectMany((tuple, _) => ImmutableArray.CreateRange([tuple.Item1, tuple.Item2]))
             .SelectMany((items, _) => items.Distinct().ToImmutableArray());
 
-        RegisterServicesOutput(context, finalServices, compilation);
+        RegisterServicesOutput(context, finalServices, context.CompilationProvider);
     }
 
     void RegisterServicesOutput(IncrementalGeneratorInitializationContext context, IncrementalValuesProvider<ServiceSymbol> services, IncrementalValueProvider<Compilation> compilation)
@@ -314,24 +292,7 @@ public class IncrementalGenerator : IIncrementalGenerator
         // target first (no args and wrong method name), in the predicate, before moving on to semantic analyis here.
 
         var options = (CSharpParseOptions)invocation.SyntaxTree.Options;
-
         var compilation = semanticModel.Compilation;
-
-        // Add missing types as needed since we depend on the static generator potentially and can't 
-        // rely on its sources being added.
-        if (compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.AddServicesNoReflectionExtension") is null)
-        {
-            compilation = compilation.AddSyntaxTrees(
-                CSharpSyntaxTree.ParseText(ThisAssembly.Resources.AddServicesNoReflectionExtension.Text, options));
-        }
-
-        if (compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceAttribute") is null)
-        {
-            compilation = compilation.AddSyntaxTrees(
-                CSharpSyntaxTree.ParseText(ThisAssembly.Resources.ServiceAttribute.Text, options),
-                CSharpSyntaxTree.ParseText(ThisAssembly.Resources.ServiceAttribute_1.Text, options));
-        }
-
         var model = compilation.GetSemanticModel(invocation.SyntaxTree);
 
         var symbolInfo = model.GetSymbolInfo(invocation);
