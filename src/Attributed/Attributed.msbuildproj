@@ -3,7 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>Devlooped.Extensions.DependencyInjection.Attributed</PackageId>
     <Description>Superseded by Devlooped.Extensions.DependencyInjection</Description>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NuGetizer" Version="1.2.4" />

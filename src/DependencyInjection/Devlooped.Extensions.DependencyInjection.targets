@@ -1,15 +1,9 @@
 ﻿<Project>
-  <Import Project="..\..\buildTransitive\Devlooped.Sponsors.targets" Condition="Exists('..\..\buildTransitive\Devlooped.Sponsors.targets')"/>
 
   <PropertyGroup>
     <!-- Backwards compatiblity -->
     <AddServiceAttribute Condition="'$(IncludeServiceAttribute)' != ''">$(IncludeServiceAttribute)</AddServiceAttribute>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Brings in the analyzer file to report installation time -->
-    <FundingPackageId Include="Devlooped.Extensions.DependencyInjection" />
-  </ItemGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="AddServiceAttribute" />
