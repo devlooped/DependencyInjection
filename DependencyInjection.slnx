@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Attributed/Attributed.msbuildproj" Type="13b669be-bb05-4ddf-9536-439f39a36129" />
+  <Project Path="src/CodeAnalysis.Tests/CodeAnalysis.Tests.csproj" />
+  <Project Path="src/DependencyInjection.Tests/DependencyInjection.Tests.csproj" />
+  <Project Path="src/DependencyInjection/DependencyInjection.csproj" />
+</Solution>

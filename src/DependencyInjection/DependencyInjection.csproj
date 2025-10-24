@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <LangVersion>Preview</LangVersion>
@@ -14,6 +14,7 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <DefineConstants>$(DefineConstants);DDI_ADDSERVICE;DDI_ADDSERVICES</DefineConstants>
     <ImplicitUsings>false</ImplicitUsings>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,12 +32,6 @@
     <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <EmbeddedCode Include="compile\*.cs" />
   </ItemGroup>
-
-  <PropertyGroup Label="SponsorLink">
-    <CustomAfterMicrosoftCSharpTargets>$(MSBuildThisFileDirectory)..\SponsorLink\SponsorLink.Analyzer.targets</CustomAfterMicrosoftCSharpTargets>
-    <!-- We also bring in the additional packages that just customize ThisAssembly.Constants -->
-    <FundingPackageId>$(PackageId)</FundingPackageId>
-  </PropertyGroup>
 
   <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')">
     <Copy SourceFiles="@(EmbeddedCode)" DestinationFiles="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')" SkipUnchangedFiles="true" />

@@ -1,21 +1,16 @@
 ![Icon](https://raw.githubusercontent.com/devlooped/DependencyInjection/main/assets/img/icon-32.png) .NET DependencyInjection via conventions or [Service] attributes  
 ============
 
-[![Version](https://img.shields.io/nuget/vpre/Devlooped.Extensions.DependencyInjection.svg)](https://www.nuget.org/packages/Devlooped.Extensions.DependencyInjection)
-[![Downloads](https://img.shields.io/nuget/dt/Devlooped.Extensions.DependencyInjection.svg)](https://www.nuget.org/packages/Devlooped.Extensions.DependencyInjection)
-[![License](https://img.shields.io/github/license/devlooped/DependencyInjection.svg?color=blue)](https://github.com//devlooped/DependencyInjection/blob/main/license.txt)
-[![Build](https://github.com/devlooped/DependencyInjection/actions/workflows/build.yml/badge.svg)](https://github.com/devlooped/DependencyInjection/actions/workflows/build.yml)
-
-<!-- include https://github.com/devlooped/.github/raw/main/sponsorlinkr.md -->
-*This project uses [SponsorLink](https://github.com/devlooped#sponsorlink) to attribute sponsor status (direct, indirect or implicit).*
-*For IDE usage (without warnings), sponsor status is required. IDE-only warnings will be issued after a grace period otherwise.*
-
-<!-- https://github.com/devlooped/.github/raw/main/sponsorlinkr.md -->
-
-<!-- #content -->
+[![EULA](https://img.shields.io/badge/EULA-OSMF-blue?labelColor=black&color=C9FF30)](osmfeula.txt)
+[![OSS](https://img.shields.io/github/license/devlooped/oss.svg?color=blue)](license.txt) 
+[![Version](https://img.shields.io/nuget/vpre/Devlooped.Extensions.DependencyInjection.svg?color=royalblue)](https://www.nuget.org/packages/Devlooped.Extensions.DependencyInjection)
+[![Downloads](https://img.shields.io/nuget/dt/Devlooped.Extensions.DependencyInjection.svg?color=darkmagenta)](https://www.nuget.org/packages/Devlooped.Extensions.DependencyInjection)
 
 Automatic compile-time service registrations for Microsoft.Extensions.DependencyInjection with no run-time dependencies, 
 from conventions or attributes.
+
+<!-- include https://github.com/devlooped/.github/raw/main/osmf.md -->
+<!-- #content -->
 
 ## Usage
 

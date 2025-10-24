@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.props" />
 
@@ -32,21 +32,11 @@
     <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
-  <Import Project="..\SponsorLink\SponsorLink\buildTransitive\Devlooped.Sponsors.targets" />
   <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.targets" />
-  <Import Project="..\SponsorLink\SponsorLink.Analyzer.Tests.targets" />
 
   <ItemGroup>
     <Analyzer Include="$(PkgMicrosoft_Bcl_HashCode)\lib\netstandard2.0\Microsoft.Bcl.HashCode.dll" />
     <Analyzer Include="$(PkgMicrosoft_Bcl_TimeProvider)\lib\netstandard2.0\Microsoft.Bcl.TimeProvider.dll" />
-  </ItemGroup>
-
-  <!-- Force immediate reporting of status, no install-time grace period -->
-  <PropertyGroup>
-    <SponsorLinkNoInstallGrace>true</SponsorLinkNoInstallGrace>
-  </PropertyGroup>
-  <ItemGroup>
-    <CompilerVisibleProperty Include="SponsorLinkNoInstallGrace" />
   </ItemGroup>
 
 </Project>
