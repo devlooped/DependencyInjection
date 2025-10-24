@@ -14,7 +14,10 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <DefineConstants>$(DefineConstants);DDI_ADDSERVICE;DDI_ADDSERVICES</DefineConstants>
     <ImplicitUsings>false</ImplicitUsings>
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <PackageLicenseFile>OSMFEULA.txt</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <ILRepack>true</ILRepack>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,10 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\osmfeula.txt" Link="osmfeula.txt" PackagePath="OSMFEULA.txt" />
     <None Update="Devlooped.Extensions.DependencyInjection.props" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Update="Devlooped.Extensions.DependencyInjection.targets" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
+    
     <EmbeddedCode Include="compile\*.cs" />
+  
+    <ILRepackInclude Include="Microsoft.Bcl.HashCode" />
   </ItemGroup>
 
   <Target Name="CopyEmbeddedCode" Inputs="@(EmbeddedCode)" Outputs="@(EmbeddedCode -> '$(IntermediateOutputPath)%(Filename).txt')">
@@ -47,6 +54,8 @@
     <XmlPoke XmlInputPath="$(OutputPath)\Devlooped.Extensions.DependencyInjection.props" Query="/Project/PropertyGroup/DevloopedExtensionsDependencyInjectionVersion" Value="$(PackageVersion)" />
   </Target>
 
+  <Import Project="..\ILRepack.targets" />
+  
   <UsingTask TaskName="XmlPoke" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
       <Namespaces />
