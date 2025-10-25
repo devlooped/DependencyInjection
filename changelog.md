@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2.2.0](https://github.com/devlooped/DependencyInjection/tree/v2.2.0) (2025-10-25)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0...v2.2.0)
+
+:sparkles: Implemented enhancements:
+
+- Drop SponsorLink, adopt OSMF [\#258](https://github.com/devlooped/DependencyInjection/pull/258) (@kzu)
+
+:hammer: Other:
+
+- 💟 Adopting SponsorLink in v2.1 [\#126](https://github.com/devlooped/DependencyInjection/issues/126)
+
+:twisted_rightwards_arrows: Merged:
+
+- Update obsolete package to latest released version [\#163](https://github.com/devlooped/DependencyInjection/pull/163) (@kzu)
+
 ## [v2.1.0](https://github.com/devlooped/DependencyInjection/tree/v2.1.0) (2025-05-11)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0-rc.5...v2.1.0)
