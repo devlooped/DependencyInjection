@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.13.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
-    <PackageReference Include="ThisAssembly.Resources" Version="2.0.14" PrivateAssets="all" />
+    <PackageReference Include="ThisAssembly.Resources" Version="2.1.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
