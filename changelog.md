@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.2.1](https://github.com/devlooped/DependencyInjection/tree/v2.2.1) (2025-10-29)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.0...v2.2.1)
+
+:twisted_rightwards_arrows: Merged:
+
+- Minor tweaks to readme and legacy dependency [\#277](https://github.com/devlooped/DependencyInjection/pull/277) (@kzu)
+
 ## [v2.2.0](https://github.com/devlooped/DependencyInjection/tree/v2.2.0) (2025-10-25)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.1.0...v2.2.0)
