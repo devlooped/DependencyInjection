@@ -3,4 +3,5 @@
   <Project Path="src/CodeAnalysis.Tests/CodeAnalysis.Tests.csproj" />
   <Project Path="src/DependencyInjection.Tests/DependencyInjection.Tests.csproj" />
   <Project Path="src/DependencyInjection/DependencyInjection.csproj" />
+  <Project Path="src/NoAddServices/NoAddServices.csproj" />
 </Solution>

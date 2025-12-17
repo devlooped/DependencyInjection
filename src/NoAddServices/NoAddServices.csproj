@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <!-- This property causes no AddXXX partial methods to be emitted -->
+    <AddServicesExtension>false</AddServicesExtension>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.targets" />
+
+</Project>
