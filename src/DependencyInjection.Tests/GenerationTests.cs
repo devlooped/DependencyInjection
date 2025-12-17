@@ -272,6 +272,17 @@ public class GenerationTests(ITestOutputHelper Output)
         Assert.Same(instance, services.GetRequiredService<IAsyncDisposable>());
     }
 
+    [Fact]
+    public void RegisterWithSpecificServiceType()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        var services = collection.BuildServiceProvider();
+
+        Assert.NotNull(services.GetRequiredService<ISpecificService>());
+        Assert.Null(services.GetService<INonSpecificService>());
+    }
+
     [GenerationTests.Service(ServiceLifetime.Singleton)]
     public class MyAttributedService : IAsyncDisposable
     {
@@ -380,11 +391,19 @@ public class SmsNotificationService : INotificationService
 }
 
 // Showcases that legacy generic Service<TKey> attribute still works
+// but now with new semantics enforced by an analyzer.
 [Service("email")]
-#pragma warning disable CS0618 // Type or member is obsolete
-[Service<string>("default")]
-#pragma warning restore CS0618 // Type or member is obsolete
+[Service<INotificationService>("default")]
 public class EmailNotificationService : INotificationService
 {
     public string Notify(string message) => $"[Email] {message}";
+}
+
+public interface ISpecificService;
+public interface INonSpecificService;
+
+[Service<ISpecificService>]
+public class SpecificServiceType : ISpecificService, INonSpecificService
+{
+    public void Dispose() => throw new NotImplementedException();
 }

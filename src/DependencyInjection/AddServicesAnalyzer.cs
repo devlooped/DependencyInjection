@@ -10,8 +10,7 @@ namespace Devlooped.Extensions.DependencyInjection;
 [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
 public class AddServicesAnalyzer : DiagnosticAnalyzer
 {
-    public static DiagnosticDescriptor NoAddServicesCall { get; } =
-        new DiagnosticDescriptor(
+    public static DiagnosticDescriptor NoAddServicesCall { get; } = new DiagnosticDescriptor(
         "DDI001",
         "No call to IServiceCollection.AddServices found.",
         "The AddServices extension method must be invoked in order for discovered services to be properly registered.",

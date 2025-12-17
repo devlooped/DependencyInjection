@@ -4,17 +4,26 @@ using System;
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
-    /// Configures the registration of a keyed service in an <see cref="IServiceCollection"/>.
-    /// Requires v8 or later of Microsoft.Extensions.DependencyInjection package.
+    /// Configures the registration of a service in an <see cref="IServiceCollection"/> using 
+    /// a specific service type.
     /// </summary>
-    /// <typeparam name="TKey">Type of service key.</typeparam>
+    /// <remarks>
+    /// Registers the service using the specific service interface, 
+    /// as well as <c>Func&lt;TService&gt;</c> and <c>Lazy&lt;TService&gt;</c>, 
+    /// so the instance can be lazily retrieved.
+    /// </remarks>
+    /// <typeparam name="TService">Type of service to register.</typeparam>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    [Obsolete("Use ServiceAttribute(object key, ServiceLifetime lifetime) instead.")]
-    partial class ServiceAttribute<TKey> : Attribute
+    partial class ServiceAttribute<TService> : Attribute
     {
         /// <summary>
         /// Annotates the service with the lifetime.
         /// </summary>
-        public ServiceAttribute(TKey key, ServiceLifetime lifetime = ServiceLifetime.Singleton) { }
+        public ServiceAttribute(ServiceLifetime lifetime = ServiceLifetime.Singleton) { }
+
+        /// <summary>
+        /// Annotates the service with the given key and lifetime.
+        /// </summary>
+        public ServiceAttribute(object key, ServiceLifetime lifetime = ServiceLifetime.Singleton) { }
     }
 }

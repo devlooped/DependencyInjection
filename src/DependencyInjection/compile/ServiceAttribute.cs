@@ -7,6 +7,11 @@ namespace Microsoft.Extensions.DependencyInjection
     /// <summary>
     /// Configures the registration of a service in an <see cref="IServiceCollection"/>.
     /// </summary>
+    /// <remarks>
+    /// Registers the service using all interfaces implemented by the target, 
+    /// as well as <c>Func{TInterface}</c> and <c>Lazy{TInterface}</c> for each, 
+    /// so the instance can be lazily retrieved.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     partial class ServiceAttribute : Attribute
     {
