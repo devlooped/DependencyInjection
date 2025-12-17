@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.2.2](https://github.com/devlooped/DependencyInjection/tree/v2.2.2) (2025-12-17)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.1...v2.2.2)
+
+:bug: Fixed bugs:
+
+- Avoid all service-related codegen when AddServicesExtension=false [\#295](https://github.com/devlooped/DependencyInjection/pull/295) (@kzu)
+
 ## [v2.2.1](https://github.com/devlooped/DependencyInjection/tree/v2.2.1) (2025-10-29)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.0...v2.2.1)
