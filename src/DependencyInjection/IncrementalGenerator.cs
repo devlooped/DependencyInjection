@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
-using KeyedService = (Microsoft.CodeAnalysis.INamedTypeSymbol Type, Microsoft.CodeAnalysis.TypedConstant? Key);
+using KeyedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TImplementation, Microsoft.CodeAnalysis.INamedTypeSymbol? TService, Microsoft.CodeAnalysis.TypedConstant? Key);
 
 namespace Devlooped.Extensions.DependencyInjection;
 
@@ -30,9 +30,10 @@ public class IncrementalGenerator : IIncrementalGenerator
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    class ServiceSymbol(INamedTypeSymbol type, int lifetime, TypedConstant? key, Location? location)
+    class ServiceSymbol(INamedTypeSymbol implementation, int lifetime, TypedConstant? key, Location? location, INamedTypeSymbol? service)
     {
-        public INamedTypeSymbol Type => type;
+        public INamedTypeSymbol TImplementation => implementation;
+        public INamedTypeSymbol? TService => service;
         public int Lifetime => lifetime;
         public TypedConstant? Key => key;
         public Location? Location => location;
@@ -42,13 +43,20 @@ public class IncrementalGenerator : IIncrementalGenerator
             if (obj is not ServiceSymbol other)
                 return false;
 
-            return type.Equals(other.Type, SymbolEqualityComparer.Default) &&
+            return SymbolEqualityComparer.Default.Equals(implementation, other.TImplementation) &&
+                SymbolEqualityComparer.Default.Equals(service, other.TService) &&
                 lifetime == other.Lifetime &&
-                Equals(key, other);
+                Equals(key, other.Key);
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(SymbolEqualityComparer.Default.GetHashCode(type), lifetime, key);
+        {
+            var hashcode = HashCode.Combine(SymbolEqualityComparer.Default.GetHashCode(implementation), lifetime, key);
+            if (service != null)
+                hashcode = HashCode.Combine(hashcode, SymbolEqualityComparer.Default.GetHashCode(service));
+
+            return hashcode;
+        }
     }
 
     record ServiceRegistration(int Lifetime, TypeSyntax? AssignableTo, string? FullNameExpression, Location? Location)
@@ -110,10 +118,13 @@ public class IncrementalGenerator : IIncrementalGenerator
         // more flexible and avoids requiring any sort of run-time dependency.
 
         var attributedServices = types
-            .SelectMany((x, _) =>
+            .Where(x => x.GetAttributes().Any())
+            .Combine(context.CompilationProvider)
+            .SelectMany((x, cancellation) =>
             {
-                var name = x.Name;
-                var attrs = x.GetAttributes();
+                var (type, compilation) = x;
+                var name = type.Name;
+                var attrs = type.GetAttributes();
                 var services = new List<ServiceSymbol>();
 
                 foreach (var attr in attrs)
@@ -164,7 +175,21 @@ public class IncrementalGenerator : IIncrementalGenerator
                         }
                     }
 
-                    services.Add(new(x, lifetime, key, attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
+                    INamedTypeSymbol? serviceType = null;
+
+                    if (serviceAttr?.AttributeClass?.Arity == 1 && serviceAttr.ApplicationSyntaxReference != null &&
+                        serviceAttr.ApplicationSyntaxReference.GetSyntax(cancellation) is AttributeSyntax serviceAttrSyntax &&
+                        compilation.GetSemanticModel(serviceAttr.ApplicationSyntaxReference.SyntaxTree).GetSymbolInfo(serviceAttrSyntax, cancellation) is { Symbol: not null } serviceAttrSymbol &&
+                        serviceAttrSymbol.Symbol is IMethodSymbol attrCtor &&
+                        attrCtor.ContainingType.IsGenericType &&
+                        attrCtor.ContainingType.TypeArguments.Length == 1 &&
+                        attrCtor.ContainingType.TypeArguments[0] is INamedTypeSymbol attrServiceType)
+                    {
+                        // We have a specific service type to register.
+                        serviceType = attrServiceType;
+                    }
+
+                    services.Add(new(type, lifetime, key, attr.ApplicationSyntaxReference?.GetSyntax().GetLocation(), serviceType));
                 }
 
                 return services.ToImmutableArray();
@@ -209,7 +234,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                 if (registration!.FullNameExpression != null && !registration.Regex.IsMatch(typeSymbol.ToFullName(compilation)))
                     continue;
 
-                results.Add(new ServiceSymbol(typeSymbol, registration.Lifetime, null, registration.Location));
+                results.Add(new ServiceSymbol(typeSymbol, registration.Lifetime, null, registration.Location, null));
             }
 
             return results.ToImmutable();
@@ -226,27 +251,27 @@ public class IncrementalGenerator : IIncrementalGenerator
     void RegisterServicesOutput(IncrementalGeneratorInitializationContext context, IncrementalValuesProvider<ServiceSymbol> services, IncrementalValueProvider<Compilation> compilation)
     {
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 0 && x.Key is null).Select((x, _) => new KeyedService(x!.Type, null)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 0 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddSingleton", ctx, data));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 1 && x.Key is null).Select((x, _) => new KeyedService(x!.Type, null)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 1 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddScoped", ctx, data));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 2 && x.Key is null).Select((x, _) => new KeyedService(x!.Type, null)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 2 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddTransient", ctx, data));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 0 && x.Key is not null).Select((x, _) => new KeyedService(x!.Type, x.Key!)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 0 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddKeyedSingleton", ctx, data));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 1 && x.Key is not null).Select((x, _) => new KeyedService(x!.Type, x.Key!)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 1 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddKeyedScoped", ctx, data));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 2 && x.Key is not null).Select((x, _) => new KeyedService(x!.Type, x.Key!)).Collect().Combine(compilation),
+            services.Where(x => x!.Lifetime == 2 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
             (ctx, data) => AddPartial("AddKeyedTransient", ctx, data));
 
         context.RegisterImplementationSourceOutput(services.Collect(), ReportInconsistencies);
@@ -254,7 +279,7 @@ public class IncrementalGenerator : IIncrementalGenerator
 
     void ReportInconsistencies(SourceProductionContext context, ImmutableArray<ServiceSymbol> array)
     {
-        var grouped = array.GroupBy(x => x.Type, SymbolEqualityComparer.Default).Where(g => g.Count() > 1).ToImmutableArray();
+        var grouped = array.GroupBy(x => x.TImplementation, SymbolEqualityComparer.Default).Where(g => g.Count() > 1).ToImmutableArray();
         if (grouped.Length == 0)
             return;
 
@@ -274,7 +299,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                 var otherLocations = keyed.Where(x => x.Location != null).Skip(1).Select(x => x.Location!);
 
                 context.ReportDiagnostic(Diagnostic.Create(AmbiguousLifetime,
-                    location, otherLocations, keyed.First().Type.ToDisplayString(), string.Join(", ", lifetimes)));
+                    location, otherLocations, keyed.First().TImplementation.ToDisplayString(), string.Join(", ", lifetimes)));
             }
         }
     }
@@ -363,7 +388,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                     {
             """);
 
-        AddServices(data.Types.Where(x => x.Key is null).Select(x => x.Type), data.Compilation, methodName, builder);
+        AddServices(data.Types.Where(x => x.Key is null), data.Compilation, methodName, builder);
         AddKeyedServices(data.Types.Where(x => x.Key is not null), data.Compilation, methodName, builder);
 
         builder.AppendLine(
@@ -376,12 +401,13 @@ public class IncrementalGenerator : IIncrementalGenerator
         ctx.AddSource(methodName + ".g", builder.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
     }
 
-    void AddServices(IEnumerable<INamedTypeSymbol> services, Compilation compilation, string methodName, StringBuilder output)
+    void AddServices(IEnumerable<KeyedService> services, Compilation compilation, string methodName, StringBuilder output)
     {
         bool isAccessible(ISymbol s) => compilation.IsSymbolAccessible(s);
 
-        foreach (var type in services)
+        foreach (var info in services)
         {
+            var type = info.TImplementation;
             var impl = type.ToFullName(compilation);
             var registered = new HashSet<string>();
 
@@ -415,7 +441,9 @@ public class IncrementalGenerator : IIncrementalGenerator
             output.AppendLine($"            services.AddTransient<Func<{impl}>>(s => s.GetRequiredService<{impl}>);");
             output.AppendLine($"            services.AddTransient(s => new Lazy<{impl}>(s.GetRequiredService<{impl}>));");
 
-            foreach (var iface in type.AllInterfaces)
+            var serviceTypes = info.TService != null ? ImmutableArray.Create(info.TService) : type.AllInterfaces;
+
+            foreach (var iface in serviceTypes)
             {
                 if (!compilation.HasImplicitConversion(type, iface))
                     continue;
@@ -468,18 +496,19 @@ public class IncrementalGenerator : IIncrementalGenerator
     {
         bool isAccessible(ISymbol s) => compilation.IsSymbolAccessible(s);
 
-        foreach (var type in services)
+        foreach (var info in services)
         {
-            var impl = type.Type.ToFullName(compilation);
+            var type = info.TImplementation;
+            var impl = type.ToFullName(compilation);
             var registered = new HashSet<string>();
-            var key = type.Key!.Value.ToCSharpString();
+            var key = info.Key!.Value.ToCSharpString();
 
-            var importing = type.Type.InstanceConstructors.FirstOrDefault(m =>
+            var importing = type.InstanceConstructors.FirstOrDefault(m =>
                 m.GetAttributes().Any(a =>
                     a.AttributeClass?.ToFullName(compilation) == "global::System.Composition.ImportingConstructorAttribute" ||
                     a.AttributeClass?.ToFullName(compilation) == "global::System.ComponentModel.Composition.ImportingConstructorAttribute"));
 
-            var ctor = importing ?? type.Type.InstanceConstructors
+            var ctor = importing ?? type.InstanceConstructors
                 .Where(isAccessible)
                 .OrderByDescending(m => m.Parameters.Length)
                 .FirstOrDefault();
@@ -504,7 +533,9 @@ public class IncrementalGenerator : IIncrementalGenerator
             output.AppendLine($"            services.AddKeyedTransient<Func<{impl}>>({key}, (s, k) => () => s.GetRequiredKeyedService<{impl}>(k));");
             output.AppendLine($"            services.AddKeyedTransient({key}, (s, k) => new Lazy<{impl}>(() => s.GetRequiredKeyedService<{impl}>(k)));");
 
-            foreach (var iface in type.Type.AllInterfaces)
+            var serviceTypes = info.TService != null ? ImmutableArray.Create(info.TService) : info.TImplementation.AllInterfaces;
+
+            foreach (var iface in serviceTypes)
             {
                 var ifaceName = iface.ToFullName(compilation);
                 if (!registered.Contains(ifaceName))

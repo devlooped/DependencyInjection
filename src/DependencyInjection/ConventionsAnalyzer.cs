@@ -10,8 +10,7 @@ namespace Devlooped.Extensions.DependencyInjection;
 [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
 public class ConventionsAnalyzer : DiagnosticAnalyzer
 {
-    public static DiagnosticDescriptor AssignableTypeOfRequired { get; } =
-        new DiagnosticDescriptor(
+    public static DiagnosticDescriptor AssignableTypeOfRequired { get; } = new DiagnosticDescriptor(
         "DDI002",
         "The convention-based registration requires a typeof() expression.",
         "When registering services by type, typeof() must be used exclusively to avoid run-time reflection.",
@@ -19,8 +18,7 @@ public class ConventionsAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor OpenGenericType { get; } =
-        new DiagnosticDescriptor(
+    public static DiagnosticDescriptor OpenGenericType { get; } = new DiagnosticDescriptor(
         "DDI003",
         "Open generic service implementations are not supported for convention-based registration.",
         "Only the concrete (closed) implementations of the open generic interface will be registered. Register open generic services explicitly using the built-in service collection methods.",

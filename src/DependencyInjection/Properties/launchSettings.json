@@ -3,6 +3,10 @@
     "Tests": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "..\\DependencyInjection.Tests\\DependencyInjection.Tests.csproj"
+    },
+    "NoAddService": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\NoAddServices\\NoAddServices.csproj"
     }
   }
 }

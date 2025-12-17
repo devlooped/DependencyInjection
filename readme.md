@@ -52,7 +52,8 @@ public interface IMyService
 
 The `ServiceLifetime` argument is optional and defaults to [ServiceLifetime.Singleton](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.servicelifetime?#fields).
 
-> NOTE: The attribute is matched by simple name, so you can define your own attribute 
+> [!NOTE]
+> The attribute is matched by simple name, so you can define your own attribute 
 > in your own assembly. It only has to provide a constructor receiving a 
 > [ServiceLifetime](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.servicelifetime) argument, 
 > and optionally an overload receiving an `object key` for keyed services.
@@ -77,12 +78,26 @@ app.MapGet("/", (IMyService service) => service.Message);
 app.Run();
 ```
 
-> NOTE: the service is available automatically for the scoped request, because 
+> [!NOTE]
+> The service is available automatically for the scoped request, because 
 > we called the generated `AddServices` that registers the discovered services. 
 
 And that's it. The source generator will discover annotated types in the current 
 project and all its references too. Since the registration code is generated at 
 compile-time, there is no run-time reflection (or dependencies) whatsoever.
+
+If the service implements many interfaces and you want to register it only for 
+a specific one, you can specify that as the generic argument:
+
+```csharp
+[Service<IMyService>(ServiceLifetime.Scoped)]
+public class MyService : IMyService, IDisposable
+```
+
+> [!TIP]
+> If no specific interface is provided, all implemented interfaces are registered 
+> for the same service implementation (and they all resolve to the same instance, 
+> except for transient lifetime).
 
 ### Convention-based
 
@@ -156,6 +171,7 @@ right `INotificationService` will be injected, based on the key provided.
 Note you can also register the same service using multiple keys, as shown in the 
 `EmailNotificationService` above.
 
+> [!IMPORTANT]
 > Keyed services are a feature of version 8.0+ of Microsoft.Extensions.DependencyInjection
 
 ## How It Works
@@ -180,7 +196,8 @@ other two registrations just retrieve the same service (according to its defined
 lifetime). This means the instance is reused and properly registered under 
 all implemented interfaces automatically.
 
-> NOTE: you can inspect the generated code by setting `EmitCompilerGeneratedFiles=true` 
+> [!TIP]
+> You can inspect the generated code by setting `EmitCompilerGeneratedFiles=true` 
 > in your project file and browsing the `generated` subfolder under `obj`.
 
 If the service type has dependencies, they will be resolved from the service 
@@ -262,9 +279,11 @@ public class ServiceAttribute : Attribute
 }
 ```
 
-> NOTE: since the constructor arguments are only used by the source generation to 
+
+> [!TIP]
+> Since the constructor arguments are only used by the source generation to 
 > detemine the registration style (and key), but never at run-time, you don't even need 
-> to keep it around in a field or property!
+> to keep them around in a field or property!
 
 With this in place, you only need to add this package to the top-level project 
 that is adding the services to the collection!
