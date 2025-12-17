@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.3.0](https://github.com/devlooped/DependencyInjection/tree/v2.3.0) (2025-12-17)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.2...v2.3.0)
+
+:sparkles: Implemented enhancements:
+
+- Repurpose older \[Service\<T\>\] to allow specifying a service type [\#296](https://github.com/devlooped/DependencyInjection/pull/296) (@kzu)
+
 ## [v2.2.2](https://github.com/devlooped/DependencyInjection/tree/v2.2.2) (2025-12-17)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.1...v2.2.2)
