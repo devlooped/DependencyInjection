@@ -20,7 +20,7 @@
     <PackageReference Include="System.Composition.Hosting" Version="10.0.1" />
     <PackageReference Include="System.Composition.TypedParts" Version="10.0.1" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" GeneratePathProperty="true" />
-    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.1" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
