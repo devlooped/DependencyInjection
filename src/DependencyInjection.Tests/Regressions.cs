@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Spectre.Console.Cli;
@@ -22,7 +19,7 @@ public class Regressions
         var command = provider.GetRequiredService<MyCommand>();
 
         Assert.Equal(0, command.Execute(new CommandContext([], Mock.Of<IRemainingArguments>(), "my", null),
-            new MySetting { Base = "", Name = "" }));
+            new MySetting { Base = "", Name = "" }, default));
     }
 }
 
@@ -47,7 +44,7 @@ public class MyCommand : BaseCommand<MySetting> { }
 
 public abstract class BaseCommand<TSettings> : Command<TSettings> where TSettings : BaseSetting, ISetting
 {
-    public override int Execute(CommandContext context, TSettings settings)
+    public override int Execute(CommandContext context, TSettings settings, CancellationToken cancellationToken)
     {
         Console.WriteLine($"Base: {settings.Base}, Name: {settings.Name}");
         return 0;
