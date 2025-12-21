@@ -1,7 +1,9 @@
 <Solution>
   <Project Path="src/Attributed/Attributed.msbuildproj" Type="13b669be-bb05-4ddf-9536-439f39a36129" />
   <Project Path="src/CodeAnalysis.Tests/CodeAnalysis.Tests.csproj" />
+  <Project Path="src/DependencyInjection.CodeFixes/DependencyInjection.CodeFixes.csproj" Id="2dbf1d6d-2147-407b-9e3a-8caf0eda549c" />
   <Project Path="src/DependencyInjection.Tests/DependencyInjection.Tests.csproj" />
-  <Project Path="src/DependencyInjection/DependencyInjection.csproj" />
+  <Project Path="src/DependencyInjection.CodeAnalysis/DependencyInjection.CodeAnalysis.csproj" />
   <Project Path="src/NoAddServices/NoAddServices.csproj" />
+  <Project Path="src/Package/DependencyInjection.Package.msbuildproj" Type="13b669be-bb05-4ddf-9536-439f39a36129" />
 </Solution>
