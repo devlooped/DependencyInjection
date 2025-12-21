@@ -3,20 +3,12 @@
   <PropertyGroup>
     <LangVersion>Preview</LangVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Devlooped.Extensions.DependencyInjection</AssemblyName>
-    <PackageId>Devlooped.Extensions.DependencyInjection</PackageId>
-    <Title>
-      Automatic compile-time service registrations for Microsoft.Extensions.DependencyInjection with no run-time dependencies, from conventions or attributes.
-    </Title>
-    <Description>$(Title)</Description>
+    <AssemblyName>Devlooped.Extensions.DependencyInjection.CodeAnalysis</AssemblyName>
     <PackFolder>analyzers/dotnet</PackFolder>
     <IsRoslynComponent>true</IsRoslynComponent>
     <DevelopmentDependency>true</DevelopmentDependency>
     <DefineConstants>$(DefineConstants);DDI_ADDSERVICE;DDI_ADDSERVICES</DefineConstants>
     <ImplicitUsings>false</ImplicitUsings>
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageLicenseFile>OSMFEULA.txt</PackageLicenseFile>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <ILRepack>true</ILRepack>
   </PropertyGroup>
 
@@ -30,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\osmfeula.txt" Link="osmfeula.txt" PackagePath="OSMFEULA.txt" />
     <None Update="Devlooped.Extensions.DependencyInjection.props" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Update="Devlooped.Extensions.DependencyInjection.targets" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />
     <None Include="compile\*.cs" CopyToOutputDirectory="PreserveNewest" PackFolder="build\netstandard2.0" />

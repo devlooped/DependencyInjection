@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.0" TreatAsLocalProperty="Version">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Devlooped.Extensions.DependencyInjection</PackageId>
+    <Title>
+      Automatic compile-time service registrations for Microsoft.Extensions.DependencyInjection with no run-time dependencies, from conventions or attributes.
+    </Title>
+    <Description>$(Title)</Description>
+    <PackageLicenseExpression>
+    </PackageLicenseExpression>
+    <PackageLicenseFile>OSMFEULA.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NuGetizer" Version="1.2.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DependencyInjection.CodeFixes\DependencyInjection.CodeFixes.csproj" />
+    <ProjectReference Include="..\DependencyInjection.CodeAnalysis\DependencyInjection.CodeAnalysis.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\osmfeula.txt" Link="osmfeula.txt" PackagePath="OSMFEULA.txt" />
+  </ItemGroup>
+</Project>

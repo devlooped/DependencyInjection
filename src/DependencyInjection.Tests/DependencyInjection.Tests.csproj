@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.props" />
+  <Import Project="..\DependencyInjection.CodeAnalysis\Devlooped.Extensions.DependencyInjection.props" />
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -24,7 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\DependencyInjection.CodeAnalysis\DependencyInjection.CodeAnalysis.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\DependencyInjection.CodeFixes\DependencyInjection.CodeFixes.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,7 +33,7 @@
     <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
-  <Import Project="..\DependencyInjection\Devlooped.Extensions.DependencyInjection.targets" />
+  <Import Project="..\DependencyInjection.CodeAnalysis\Devlooped.Extensions.DependencyInjection.targets" />
 
   <ItemGroup>
     <Analyzer Include="$(PkgMicrosoft_Bcl_HashCode)\lib\netstandard2.0\Microsoft.Bcl.HashCode.dll" />

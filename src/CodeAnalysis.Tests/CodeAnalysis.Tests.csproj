@@ -14,15 +14,17 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.2" />
     <PackageReference Include="ThisAssembly.Resources" Version="2.1.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" AdditionalProperties="ILRepack=true" />
+    <ProjectReference Include="..\DependencyInjection.CodeFixes\DependencyInjection.CodeFixes.csproj" />
+    <ProjectReference Include="..\DependencyInjection.CodeAnalysis\DependencyInjection.CodeAnalysis.csproj" AdditionalProperties="ILRepack=true" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedCode Include="..\DependencyInjection\compile\*.cs" />
+    <EmbeddedCode Include="..\DependencyInjection.CodeAnalysis\compile\*.cs" />
   </ItemGroup>
   
 </Project>
