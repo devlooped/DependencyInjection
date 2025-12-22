@@ -1,8 +1,8 @@
 # Changelog
 
-## [untagged-82c31839570064d4052c](https://github.com/devlooped/DependencyInjection/tree/untagged-82c31839570064d4052c) (2025-12-22)
+## [v2.3.1](https://github.com/devlooped/DependencyInjection/tree/v2.3.1) (2025-12-22)
 
-[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.3.0...untagged-82c31839570064d4052c)
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.3.0...v2.3.1)
 
 :sparkles: Implemented enhancements:
 
