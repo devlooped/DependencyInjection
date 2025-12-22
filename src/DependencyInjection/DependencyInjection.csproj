@@ -38,7 +38,7 @@
     <ILRepackInclude Include="Microsoft.Bcl.HashCode" />
   </ItemGroup>
 
-  <Target Name="PokePackageVersion" BeforeTargets="GetPackageContents" DependsOnTargets="CopyFilesToOutputDirectory" Condition="'$(dotnet-nugetize)' == '' and Exists('$(OutputPath)\Devlooped.Extensions.DependencyInjection.props')">
+  <Target Name="PokePackageVersion" BeforeTargets="GetPackageContents" DependsOnTargets="CopyFilesToOutputDirectory;GetPackageVersion" Condition="'$(dotnet-nugetize)' == '' and Exists('$(OutputPath)\Devlooped.Extensions.DependencyInjection.props')">
     <XmlPoke XmlInputPath="$(OutputPath)\Devlooped.Extensions.DependencyInjection.props" Query="/Project/PropertyGroup/DevloopedExtensionsDependencyInjectionVersion" Value="$(PackageVersion)" />
   </Target>
 
