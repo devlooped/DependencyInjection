@@ -1,5 +1,18 @@
 # Changelog
 
+## [untagged-82c31839570064d4052c](https://github.com/devlooped/DependencyInjection/tree/untagged-82c31839570064d4052c) (2025-12-22)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.3.0...untagged-82c31839570064d4052c)
+
+:sparkles: Implemented enhancements:
+
+- Add ServiceAttribute\<TService\> to allow specifying a service type [\#281](https://github.com/devlooped/DependencyInjection/issues/281)
+- Provide a codefix for legacy service usage and add tests [\#303](https://github.com/devlooped/DependencyInjection/pull/303) (@kzu)
+
+:twisted_rightwards_arrows: Merged:
+
+- Fix dependency on package version for version poke [\#305](https://github.com/devlooped/DependencyInjection/pull/305) (@kzu)
+
 ## [v2.3.0](https://github.com/devlooped/DependencyInjection/tree/v2.3.0) (2025-12-17)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.2.2...v2.3.0)
