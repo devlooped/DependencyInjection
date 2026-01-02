@@ -39,9 +39,9 @@
 	weak
 [file ".github/workflows/build.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/build.yml
-	sha = 56c2b8532c2f86235a0f5bd00ba6eba126f199cf
+	sha = 7f5f9ee9f362f7e8f951d618f8f799033550e687
 
-	etag = bf99c19427f4372ecfe38ec56aa8c411058684fb717da5661f17ac00388b3602
+	etag = a04ce46114292f5c0e76bc1f260381b174c93d6f264749dfacbfc892238bec73
 	weak
 [file ".github/workflows/changelog.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/changelog.yml
@@ -57,15 +57,15 @@
 	weak
 [file ".github/workflows/includes.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/includes.yml
-	sha = 2d1fb4ed52b63689f2b20b994512ebac28721243
+	sha = 06628725a6303bb8c4cf3076a384fc982a91bc0b
 
-	etag = 34ade86f020dea717c6a27ad7dcd0069c35be2832c58b0ba961278a1efe34089
+	etag = 478f91d4126230e57cc601382da1ba23f9daa054645b4af89800d8dd862e64fd
 	weak
 [file ".github/workflows/publish.yml"]
 	url = https://github.com/devlooped/oss/blob/main/.github/workflows/publish.yml
-	sha = 56c2b8532c2f86235a0f5bd00ba6eba126f199cf
+	sha = 7f5f9ee9f362f7e8f951d618f8f799033550e687
 
-	etag = 2ef43521627aa3a91dd55bdc2856ec0c6a93b42485d4fe9d6b181f9ee42c8e18
+	etag = c60411d1aa4e98e7f69e2d34cbccb8eb7e387ec11f6f8e78ee8d8b92122d7025
 	weak
 [file ".gitignore"]
 	url = https://github.com/devlooped/oss/blob/main/.gitignore
