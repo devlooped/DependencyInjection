@@ -6,8 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="Devlooped.Extensions.DependencyInjection" Version="42.*" />
-    <PackageReference Include="PolySharp" PrivateAssets="all" Version="1.14.1" />
-    <PackageReference Include="Merq" Version="2.0.0" />
+    <PackageReference Include="PolySharp" PrivateAssets="all" Version="1.16.0" />
+    <PackageReference Include="Merq" Version="3.0.0" />
   </ItemGroup>
 
 </Project>
