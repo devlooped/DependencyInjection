@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.0" TreatAsLocalProperty="Version">
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.7.134" TreatAsLocalProperty="Version">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>Devlooped.Extensions.DependencyInjection.Attributed</PackageId>
@@ -6,7 +6,7 @@
     <Version>2.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NuGetizer" Version="1.2.4" />
-    <PackageReference Include="Devlooped.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageReference Include="NuGetizer" Version="1.4.9" />
+    <PackageReference Include="Devlooped.Extensions.DependencyInjection" Version="2.3.1" />
   </ItemGroup>
 </Project>
