@@ -112,6 +112,27 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
+        /// Decorates keyed registrations for <typeparamref name="TDecorated"/> with <typeparamref name="TDecorator"/>.
+        /// </summary>
+        /// <remarks>
+        /// The decorated service must already be registered with <paramref name="key"/> before this method is invoked.
+        /// The generated implementation replaces matching registrations in-place and preserves each registration lifetime.
+        /// </remarks>
+        /// <typeparam name="TDecorated">The service type to decorate.</typeparam>
+        /// <typeparam name="TDecorator">The decorator type. It must implement <typeparamref name="TDecorated"/>.</typeparam>
+        /// <param name="services">The <see cref="IServiceCollection"/> to update.</param>
+        /// <param name="key">The key for the service registration to decorate.</param>
+        /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
+        [DDIDecorate]
+        public static IServiceCollection Decorate<TDecorated, TDecorator>(this IServiceCollection services, object? key)
+            where TDecorated : class
+            where TDecorator : class, TDecorated
+        {
+            DecorateKeyedServices<TDecorated, TDecorator>(services, key);
+            return services;
+        }
+
+        /// <summary>
         /// Adds discovered scoped services to the collection.
         /// </summary>
         static partial void AddScopedServices(IServiceCollection services);
@@ -148,6 +169,13 @@ namespace Microsoft.Extensions.DependencyInjection
             where TDecorated : class
             where TDecorator : class, TDecorated;
 
+        /// <summary>
+        /// Applies source-generated keyed service decorations.
+        /// </summary>
+        static partial void DecorateKeyedServices<TDecorated, TDecorator>(IServiceCollection services, object? key)
+            where TDecorated : class
+            where TDecorator : class, TDecorated;
+
         static void DecorateDescriptors<TDecorated, TDecorator>(
             IServiceCollection services,
             Func<IServiceProvider, ServiceDescriptor, TDecorated> factory)
@@ -173,6 +201,38 @@ namespace Microsoft.Extensions.DependencyInjection
                 services[item.index] = ServiceDescriptor.Describe(
                     typeof(TDecorated),
                     provider => factory(provider, item.descriptor),
+                    item.descriptor.Lifetime);
+            }
+        }
+
+        static void DecorateKeyedDescriptors<TDecorated, TDecorator>(
+            IServiceCollection services,
+            object? key,
+            Func<IServiceProvider, object?, ServiceDescriptor, TDecorated> factory)
+            where TDecorated : class
+            where TDecorator : class, TDecorated
+        {
+            var descriptors = services
+                .Select((descriptor, index) => new { descriptor, index })
+                .Where(x =>
+                    x.descriptor.IsKeyedService &&
+                    x.descriptor.ServiceType == typeof(TDecorated) &&
+                    Equals(x.descriptor.ServiceKey, key) &&
+                    GetImplementationType(x.descriptor) != typeof(TDecorator))
+                .ToArray();
+
+            if (descriptors.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No keyed service registration for {typeof(TDecorated)} with key '{key}' was found. Call AddServices before Decorate, or register the decorated service before decorating it.");
+            }
+
+            foreach (var item in descriptors)
+            {
+                services[item.index] = ServiceDescriptor.DescribeKeyed(
+                    typeof(TDecorated),
+                    key,
+                    (provider, serviceKey) => factory(provider, serviceKey, item.descriptor),
                     item.descriptor.Lifetime);
             }
         }
@@ -206,6 +266,37 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return service as TDecorated ??
                 throw new InvalidOperationException($"The decorated registration did not produce an instance of {typeof(TDecorated)}.");
+        }
+
+        static TDecorated GetKeyedDecorated<TDecorated>(IServiceProvider provider, object? key, ServiceDescriptor descriptor)
+            where TDecorated : class
+        {
+            object? service;
+
+            if (!descriptor.IsKeyedService)
+            {
+                throw new InvalidOperationException($"Non-keyed service registrations for {typeof(TDecorated)} cannot be decorated by this overload.");
+            }
+
+            if (descriptor.KeyedImplementationInstance != null)
+            {
+                service = descriptor.KeyedImplementationInstance;
+            }
+            else if (descriptor.KeyedImplementationFactory != null)
+            {
+                service = descriptor.KeyedImplementationFactory(provider, key);
+            }
+            else if (descriptor.KeyedImplementationType != null)
+            {
+                service = ActivatorUtilities.GetServiceOrCreateInstance(provider, descriptor.KeyedImplementationType);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unsupported keyed service registration for {typeof(TDecorated)}.");
+            }
+
+            return service as TDecorated ??
+                throw new InvalidOperationException($"The decorated keyed registration did not produce an instance of {typeof(TDecorated)}.");
         }
 
         static Type? GetImplementationType(ServiceDescriptor descriptor)

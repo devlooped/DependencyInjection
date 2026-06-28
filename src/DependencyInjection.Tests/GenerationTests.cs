@@ -320,6 +320,25 @@ public class GenerationTests(ITestOutputHelper Output)
     }
 
     [Fact]
+    public void DecorateKeyedService()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IKeyedDecoratedService, KeyedDecoratedServiceDecorator>("decorated");
+        var services = collection.BuildServiceProvider();
+
+        var instance = Assert.IsType<KeyedDecoratedServiceDecorator>(
+            services.GetRequiredKeyedService<IKeyedDecoratedService>("decorated"));
+
+        Assert.IsType<KeyedDecoratedService>(instance.Inner);
+        Assert.Same(services.GetRequiredService<SingletonService>(), instance.Singleton);
+
+        var factory = services.GetRequiredKeyedService<Func<IKeyedDecoratedService>>("decorated");
+        Assert.IsType<KeyedDecoratedServiceDecorator>(factory());
+        Assert.IsType<OtherKeyedDecoratedService>(services.GetRequiredKeyedService<IKeyedDecoratedService>("other"));
+    }
+
+    [Fact]
     public void DecorateThrowsIfDecoratedServiceIsNotRegistered()
     {
         var collection = new ServiceCollection();
@@ -328,6 +347,19 @@ public class GenerationTests(ITestOutputHelper Output)
             collection.Decorate<IDecoratedService, DecoratedServiceDecorator>());
 
         Assert.Contains(nameof(IDecoratedService), ex.Message);
+    }
+
+    [Fact]
+    public void DecorateKeyedThrowsIfDecoratedServiceIsNotRegistered()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            collection.Decorate<IKeyedDecoratedService, KeyedDecoratedServiceDecorator>("missing"));
+
+        Assert.Contains(nameof(IKeyedDecoratedService), ex.Message);
+        Assert.Contains("missing", ex.Message);
     }
 
     [GenerationTests.Service(ServiceLifetime.Singleton)]
@@ -479,4 +511,19 @@ public class SecondMultipleDecoratedService : IMultipleDecoratedService { }
 public class MultipleDecoratedServiceDecorator(IMultipleDecoratedService inner) : IMultipleDecoratedService
 {
     public IMultipleDecoratedService Inner => inner;
+}
+
+public interface IKeyedDecoratedService { }
+
+[Service("decorated", ServiceLifetime.Singleton)]
+public class KeyedDecoratedService : IKeyedDecoratedService { }
+
+[Service("other", ServiceLifetime.Singleton)]
+public class OtherKeyedDecoratedService : IKeyedDecoratedService { }
+
+[Service("decorated", ServiceLifetime.Singleton)]
+public class KeyedDecoratedServiceDecorator(IKeyedDecoratedService inner, SingletonService singleton) : IKeyedDecoratedService
+{
+    public IKeyedDecoratedService Inner => inner;
+    public SingletonService Singleton => singleton;
 }

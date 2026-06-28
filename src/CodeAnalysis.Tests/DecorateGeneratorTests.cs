@@ -146,6 +146,72 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
         await test.RunAsync();
     }
 
+    [Fact]
+    public async Task NoErrorIfKeyedDecoratorLifetimeMatchesSelectedKey()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class Foo : IFoo { }
+
+            [Service("bar", ServiceLifetime.Singleton)]
+            public class OtherFoo : IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>("foo");
+                }
+            }
+            """);
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task ErrorIfKeyedDecoratorLifetimeIsIncompatible()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class Foo : IFoo { }
+
+            [Service("foo", ServiceLifetime.Singleton)]
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    {|#0:services.Decorate<IFoo, FooDecorator>("foo")|};
+                }
+            }
+            """);
+
+        test.ExpectedDiagnostics.Add(
+            Verifier.Diagnostic(IncrementalGenerator.DecoratorLifetimeIncompatible)
+                .WithLocation(0)
+                .WithArguments("FooDecorator", "Singleton", "IFoo", "Scoped"));
+
+        await test.RunAsync();
+    }
+
     static CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier> CreateTest(string source)
     {
         return new CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier>
