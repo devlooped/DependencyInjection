@@ -235,7 +235,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                 return options.GlobalOptions.TryGetValue("build_property.AddServicesExtension", out var value) &&
                     bool.TryParse(value, out var addServices) && addServices && decoration is not null;
             })
-            .Select((x, _) => x.Left!)
+            .Select((x, _) => x.Left!.Value)
             .Collect();
 
         // Project matching service types to register with the given lifetime.

@@ -32,7 +32,7 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
                 {
                     var services = new ServiceCollection();
                     services.AddServices();
-                    services.{|#0:Decorate<IFoo, FooDecorator>()|};
+                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
                 }
             }
             """);
@@ -66,7 +66,7 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
                 {
                     var services = new ServiceCollection();
                     services.AddServices();
-                    services.{|#0:Decorate<IFoo, FooDecorator>()|};
+                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
                 }
             }
             """);
@@ -100,7 +100,7 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
                 {
                     var services = new ServiceCollection();
                     services.AddServices();
-                    services.{|#0:Decorate<IFoo, FooDecorator>()|};
+                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
                 }
             }
             """);
