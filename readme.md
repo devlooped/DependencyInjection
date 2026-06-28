@@ -174,6 +174,61 @@ Note you can also register the same service using multiple keys, as shown in the
 > [!IMPORTANT]
 > Keyed services are a feature of version 8.0+ of Microsoft.Extensions.DependencyInjection
 
+### Decorating Services
+
+After services are registered with `AddServices`, you can wrap existing registrations 
+with a decorator using the `Decorate<TDecorated, TDecorator>()` extension method. 
+The decorated service must already be registered, and the source generator replaces 
+matching registrations in-place while preserving each registration's lifetime.
+
+The decorator type must implement `TDecorated`, be annotated with `[Service]`, and 
+provide a constructor that accepts the decorated service as one of its parameters 
+(additional dependencies are resolved from the container as usual):
+
+```csharp
+public interface INotificationService
+{
+    void Send(string message);
+}
+
+[Service(ServiceLifetime.Scoped)]
+public class EmailNotificationService : INotificationService
+{
+    public void Send(string message) => Console.WriteLine($"[Email] {message}");
+}
+
+[Service(ServiceLifetime.Scoped)]
+public class LoggingNotificationService(INotificationService inner) : INotificationService
+{
+    public void Send(string message)
+    {
+        Console.WriteLine("Sending notification...");
+        inner.Send(message);
+    }
+}
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddServices();
+builder.Services.Decorate<INotificationService, LoggingNotificationService>();
+```
+
+When resolving `INotificationService`, the container returns a `LoggingNotificationService` 
+that wraps the original `EmailNotificationService`. `Func<T>` and `Lazy<T>` registrations 
+for the same service type also resolve the decorated instance.
+
+If multiple registrations exist for the same service type, all of them are decorated. 
+For keyed services, pass the key to decorate a specific registration:
+
+```csharp
+builder.Services.AddServices();
+builder.Services.Decorate<INotificationService, LoggingNotificationService>("email");
+```
+
+The generator validates decorations at compile-time: the decorator must be a registered 
+service, its lifetime must be compatible with the decorated registration, and its 
+constructor must accept the decorated service type.
+
 ## How It Works
 
 In all cases, the generated code that implements the registration looks like the following:
