@@ -113,6 +113,39 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
         await test.RunAsync();
     }
 
+    [Fact]
+    public async Task NoErrorIfDecoratorConstructorHasOtherDependencies()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+            public interface IOtherDependency { }
+
+            [Service]
+            public class Foo : IFoo { }
+
+            [Service]
+            public class OtherDependency : IOtherDependency { }
+
+            [Service]
+            public class FooDecorator(IFoo inner, IOtherDependency other) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>();
+                }
+            }
+            """);
+
+        await test.RunAsync();
+    }
+
     static CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier> CreateTest(string source)
     {
         return new CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier>

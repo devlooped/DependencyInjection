@@ -53,7 +53,7 @@ public class IncrementalGenerator : IIncrementalGenerator
         new DiagnosticDescriptor(
         "DDI008",
         "Decorator constructor must accept the decorated service.",
-        "Decorator type {0} must have an accessible constructor with exactly one parameter of type {1}.",
+        "Decorator type {0} must have an accessible constructor with exactly one parameter of type {1}; additional dependencies are allowed.",
         "Build",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
