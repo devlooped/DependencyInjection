@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
-using KeyedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TImplementation, Microsoft.CodeAnalysis.INamedTypeSymbol? TService, Microsoft.CodeAnalysis.TypedConstant? Key);
 using DecoratedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TDecorated, Microsoft.CodeAnalysis.INamedTypeSymbol TDecorator, bool IsKeyed, bool HasKeyValue, object? KeyValue, Microsoft.CodeAnalysis.Location? Location);
+using KeyedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TImplementation, Microsoft.CodeAnalysis.INamedTypeSymbol? TService, Microsoft.CodeAnalysis.TypedConstant? Key);
 
 namespace Devlooped.Extensions.DependencyInjection;
 
