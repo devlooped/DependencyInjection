@@ -283,6 +283,53 @@ public class GenerationTests(ITestOutputHelper Output)
         Assert.Null(services.GetService<INonSpecificService>());
     }
 
+    [Fact]
+    public void DecorateService()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IDecoratedService, DecoratedServiceDecorator>();
+        var services = collection.BuildServiceProvider();
+
+        using var scope = services.CreateScope();
+
+        var instance = Assert.IsType<DecoratedServiceDecorator>(scope.ServiceProvider.GetRequiredService<IDecoratedService>());
+
+        Assert.IsType<DecoratedService>(instance.Inner);
+        Assert.Same(instance, scope.ServiceProvider.GetRequiredService<IDecoratedService>());
+        Assert.Same(instance, scope.ServiceProvider.GetRequiredService<Func<IDecoratedService>>().Invoke());
+        Assert.Same(instance, scope.ServiceProvider.GetRequiredService<Lazy<IDecoratedService>>().Value);
+        Assert.Same(services.GetRequiredService<SingletonService>(), instance.Singleton);
+    }
+
+    [Fact]
+    public void DecorateMultipleRegistrations()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IMultipleDecoratedService, MultipleDecoratedServiceDecorator>();
+        var services = collection.BuildServiceProvider();
+
+        var instances = services.GetServices<IMultipleDecoratedService>()
+            .Cast<MultipleDecoratedServiceDecorator>()
+            .ToList();
+
+        Assert.Equal(2, instances.Count);
+        Assert.Contains(instances, x => x.Inner is FirstMultipleDecoratedService);
+        Assert.Contains(instances, x => x.Inner is SecondMultipleDecoratedService);
+    }
+
+    [Fact]
+    public void DecorateThrowsIfDecoratedServiceIsNotRegistered()
+    {
+        var collection = new ServiceCollection();
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            collection.Decorate<IDecoratedService, DecoratedServiceDecorator>());
+
+        Assert.Contains(nameof(IDecoratedService), ex.Message);
+    }
+
     [GenerationTests.Service(ServiceLifetime.Singleton)]
     public class MyAttributedService : IAsyncDisposable
     {
@@ -406,4 +453,30 @@ public interface INonSpecificService;
 public class SpecificServiceType : ISpecificService, INonSpecificService
 {
     public void Dispose() => throw new NotImplementedException();
+}
+
+public interface IDecoratedService { }
+
+[Service(ServiceLifetime.Scoped)]
+public class DecoratedService : IDecoratedService { }
+
+[Service(ServiceLifetime.Scoped)]
+public class DecoratedServiceDecorator(IDecoratedService inner, SingletonService singleton) : IDecoratedService
+{
+    public IDecoratedService Inner => inner;
+    public SingletonService Singleton => singleton;
+}
+
+public interface IMultipleDecoratedService { }
+
+[Service(ServiceLifetime.Transient)]
+public class FirstMultipleDecoratedService : IMultipleDecoratedService { }
+
+[Service(ServiceLifetime.Transient)]
+public class SecondMultipleDecoratedService : IMultipleDecoratedService { }
+
+[Service(ServiceLifetime.Transient)]
+public class MultipleDecoratedServiceDecorator(IMultipleDecoratedService inner) : IMultipleDecoratedService
+{
+    public IMultipleDecoratedService Inner => inner;
 }
