@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
@@ -320,6 +321,22 @@ public class GenerationTests(ITestOutputHelper Output)
     }
 
     [Fact]
+    public void DecorateMultipleRegistrationsAsIEnumerableDependency()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IMultipleDecoratedService, MultipleDecoratedServiceDecorator>();
+        var services = collection.BuildServiceProvider();
+
+        var consumer = services.GetRequiredService<IEnumerableDecoratedConsumer>();
+
+        var decorated = consumer.Services.Cast<MultipleDecoratedServiceDecorator>().ToList();
+        Assert.Equal(2, decorated.Count);
+        Assert.Contains(decorated, x => x.Inner is FirstMultipleDecoratedService);
+        Assert.Contains(decorated, x => x.Inner is SecondMultipleDecoratedService);
+    }
+
+    [Fact]
     public void DecorateKeyedService()
     {
         var collection = new ServiceCollection();
@@ -594,4 +611,10 @@ public class UnattributedDecorator(IUnattributedDecorated inner, SingletonServic
 {
     public IUnattributedDecorated Inner => inner;
     public SingletonService Singleton => singleton;
+}
+
+[Service]
+public class IEnumerableDecoratedConsumer(IEnumerable<IMultipleDecoratedService> services)
+{
+    public IEnumerable<IMultipleDecoratedService> Services => services;
 }
