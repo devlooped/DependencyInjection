@@ -31,15 +31,6 @@ public class IncrementalGenerator : IIncrementalGenerator
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor DecoratorMustBeService { get; } =
-        new DiagnosticDescriptor(
-        "DDI006",
-        "Decorator must be annotated with ServiceAttribute.",
-        "Decorator type {0} must be annotated with [Service] so its registration is generated before decoration.",
-        "Build",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
     public static DiagnosticDescriptor DecoratorLifetimeIncompatible { get; } =
         new DiagnosticDescriptor(
         "DDI007",
@@ -387,6 +378,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                     {
             """);
 
+        // Emit non-keyed dispatch
         for (var i = 0; i < validDecorations.Count; i++)
         {
             var (decoration, _) = validDecorations[i];
@@ -413,6 +405,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                     {
             """);
 
+        // Emit keyed dispatch
         for (var i = 0; i < validDecorations.Count; i++)
         {
             var (decoration, _) = validDecorations[i];
@@ -424,7 +417,7 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             builder.AppendLine($"            if (typeof(TDecorated) == typeof({decorated}) && typeof(TDecorator) == typeof({decorator}))");
             builder.AppendLine("            {");
-            builder.AppendLine($"                DecorateKeyedDescriptors<{decorated}, {decorator}>(services, key, CreateKeyedDecorator{i});");
+            builder.AppendLine($"                DecorateDescriptors<{decorated}, {decorator}>(services, key, CreateKeyedDecorator{i});");
             builder.AppendLine("                return;");
             builder.AppendLine("            }");
         }
@@ -434,6 +427,33 @@ public class IncrementalGenerator : IIncrementalGenerator
                     }
             """);
 
+        // Helper to build constructor arguments for a decorator factory.
+        // Handles the special case for the decorated service parameter and [FromKeyedServices].
+        string BuildDecoratorArgs((DecoratedService Decoration, IMethodSymbol Constructor) entry, Compilation compilation, bool isKeyed)
+        {
+            var (decoration, ctor) = entry;
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            bool usedDecorated = false;
+
+            return string.Join(", ", ctor.Parameters.Select(p =>
+            {
+                if (!usedDecorated && SymbolEqualityComparer.Default.Equals(p.Type, decoration.TDecorated))
+                {
+                    usedDecorated = true;
+                    return isKeyed
+                        ? $"GetKeyedDecorated<{decorated}>(s, key, descriptor)"
+                        : $"GetDecorated<{decorated}>(s, descriptor)";
+                }
+
+                var fromKeyed = p.GetAttributes().FirstOrDefault(IsFromKeyed);
+                if (fromKeyed is not null)
+                    return $"s.GetRequiredKeyedService<{p.Type.ToFullName(compilation)}>({fromKeyed.ConstructorArguments[0].ToCSharpString()})";
+
+                return $"s.GetRequiredService<{p.Type.ToFullName(compilation)}>()";
+            }));
+        }
+
+        // Emit non-keyed factory methods
         for (var i = 0; i < validDecorations.Count; i++)
         {
             var (decoration, ctor) = validDecorations[i];
@@ -442,27 +462,14 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             var decorated = decoration.TDecorated.ToFullName(compilation);
             var decorator = decoration.TDecorator.ToFullName(compilation);
-            var usedDecorated = false;
-            var args = string.Join(", ", ctor.Parameters.Select(p =>
-            {
-                if (!usedDecorated && SymbolEqualityComparer.Default.Equals(p.Type, decoration.TDecorated))
-                {
-                    usedDecorated = true;
-                    return $"GetDecorated<{decorated}>(s, descriptor)";
-                }
-
-                var fromKeyed = p.GetAttributes().FirstOrDefault(IsFromKeyed);
-                if (fromKeyed is not null)
-                    return $"s.GetRequiredKeyedService<{p.Type.ToFullName(compilation)}>({fromKeyed.ConstructorArguments[0].ToCSharpString()})";
-
-                return $"s.GetRequiredService<{p.Type.ToFullName(compilation)}>()";
-            }));
+            var args = BuildDecoratorArgs((decoration, ctor), compilation, isKeyed: false);
 
             builder.AppendLine();
             builder.AppendLine($"        static {decorated} CreateDecorator{i}(IServiceProvider s, ServiceDescriptor descriptor)");
             builder.AppendLine($"            => new {decorator}({args});");
         }
 
+        // Emit keyed factory methods
         for (var i = 0; i < validDecorations.Count; i++)
         {
             var (decoration, ctor) = validDecorations[i];
@@ -471,21 +478,7 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             var decorated = decoration.TDecorated.ToFullName(compilation);
             var decorator = decoration.TDecorator.ToFullName(compilation);
-            var usedDecorated = false;
-            var args = string.Join(", ", ctor.Parameters.Select(p =>
-            {
-                if (!usedDecorated && SymbolEqualityComparer.Default.Equals(p.Type, decoration.TDecorated))
-                {
-                    usedDecorated = true;
-                    return $"GetKeyedDecorated<{decorated}>(s, key, descriptor)";
-                }
-
-                var fromKeyed = p.GetAttributes().FirstOrDefault(IsFromKeyed);
-                if (fromKeyed is not null)
-                    return $"s.GetRequiredKeyedService<{p.Type.ToFullName(compilation)}>({fromKeyed.ConstructorArguments[0].ToCSharpString()})";
-
-                return $"s.GetRequiredService<{p.Type.ToFullName(compilation)}>()";
-            }));
+            var args = BuildDecoratorArgs((decoration, ctor), compilation, isKeyed: true);
 
             builder.AppendLine();
             builder.AppendLine($"        static {decorated} CreateKeyedDecorator{i}(IServiceProvider s, object? key, ServiceDescriptor descriptor)");
@@ -511,15 +504,6 @@ public class IncrementalGenerator : IIncrementalGenerator
         constructor = GetDecoratorConstructor(decoration, compilation);
         var isValid = true;
         var decoratorLifetimes = GetDecoratorLifetimes(decoration, compilation);
-
-        if (decoratorLifetimes.IsEmpty)
-        {
-            ctx.ReportDiagnostic(Diagnostic.Create(
-                DecoratorMustBeService,
-                decoration.Location,
-                decoration.TDecorator.ToDisplayString()));
-            isValid = false;
-        }
 
         var decoratedLifetimes = GetDecoratedLifetimes(decoration, services, compilation);
         if (!decoratorLifetimes.IsEmpty && !decoratedLifetimes.IsEmpty &&

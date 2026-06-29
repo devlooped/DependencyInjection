@@ -181,9 +181,10 @@ with a decorator using the `Decorate<TDecorated, TDecorator>()` extension method
 The decorated service must already be registered, and the source generator replaces 
 matching registrations in-place while preserving each registration's lifetime.
 
-The decorator type must implement `TDecorated`, be annotated with `[Service]`, and 
-provide a constructor that accepts the decorated service as one of its parameters 
-(additional dependencies are resolved from the container as usual):
+The decorator type must implement `TDecorated` and provide a constructor that accepts 
+the decorated service as one of its parameters (additional dependencies are resolved 
+from the container as usual). Annotating the decorator with `[Service]` is optional 
+(when present, lifetime compatibility with the decorated service is validated at compile time):
 
 ```csharp
 public interface INotificationService
@@ -225,9 +226,10 @@ builder.Services.AddServices();
 builder.Services.Decorate<INotificationService, LoggingNotificationService>("email");
 ```
 
-The generator validates decorations at compile-time: the decorator must be a registered 
-service, its lifetime must be compatible with the decorated registration, and its 
-constructor must accept the decorated service type.
+The generator validates decorations at compile-time: the decorator must have a constructor 
+that accepts the decorated service type (plus any additional dependencies). If the decorator 
+is annotated with `[Service]`, its lifetime is also validated for compatibility with the 
+decorated registration(s).
 
 ## How It Works
 

@@ -362,6 +362,40 @@ public class GenerationTests(ITestOutputHelper Output)
         Assert.Contains("missing", ex.Message);
     }
 
+    [Fact]
+    public void DecorateServiceReadmeExample()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IReadmeNotificationService, ReadmeLoggingNotificationService>();
+        var services = collection.BuildServiceProvider();
+
+        using var scope = services.CreateScope();
+        var provider = scope.ServiceProvider;
+
+        var instance = Assert.IsType<ReadmeLoggingNotificationService>(provider.GetRequiredService<IReadmeNotificationService>());
+        Assert.IsType<ReadmeEmailNotificationService>(instance.Inner);
+
+        Assert.Same(instance, provider.GetRequiredService<Func<IReadmeNotificationService>>().Invoke());
+        Assert.Same(instance, provider.GetRequiredService<Lazy<IReadmeNotificationService>>().Value);
+    }
+
+    [Fact]
+    public void DecorateWorksWithDecoratorThatHasNoServiceAttribute()
+    {
+        var collection = new ServiceCollection();
+        collection.AddServices();
+        collection.Decorate<IUnattributedDecorated, UnattributedDecorator>();
+        var services = collection.BuildServiceProvider();
+
+        var instance = Assert.IsType<UnattributedDecorator>(services.GetRequiredService<IUnattributedDecorated>());
+        Assert.IsType<UnattributedDecoratedImpl>(instance.Inner);
+        Assert.Same(services.GetRequiredService<SingletonService>(), instance.Singleton);
+
+        Assert.Same(instance, services.GetRequiredService<Func<IUnattributedDecorated>>().Invoke());
+        Assert.Same(instance, services.GetRequiredService<Lazy<IUnattributedDecorated>>().Value);
+    }
+
     [GenerationTests.Service(ServiceLifetime.Singleton)]
     public class MyAttributedService : IAsyncDisposable
     {
@@ -525,5 +559,39 @@ public class OtherKeyedDecoratedService : IKeyedDecoratedService { }
 public class KeyedDecoratedServiceDecorator(IKeyedDecoratedService inner, SingletonService singleton) : IKeyedDecoratedService
 {
     public IKeyedDecoratedService Inner => inner;
+    public SingletonService Singleton => singleton;
+}
+
+public interface IReadmeNotificationService
+{
+    void Send(string message);
+}
+
+[Service(ServiceLifetime.Scoped)]
+public class ReadmeEmailNotificationService : IReadmeNotificationService
+{
+    public void Send(string message) => Console.WriteLine($"[Email] {message}");
+}
+
+[Service(ServiceLifetime.Scoped)]
+public class ReadmeLoggingNotificationService(IReadmeNotificationService inner) : IReadmeNotificationService
+{
+    public IReadmeNotificationService Inner => inner;
+    public void Send(string message)
+    {
+        Console.WriteLine("Sending notification...");
+        inner.Send(message);
+    }
+}
+
+public interface IUnattributedDecorated { }
+
+[Service]
+public class UnattributedDecoratedImpl : IUnattributedDecorated { }
+
+// Intentionally no [Service] attribute — decoration should still work.
+public class UnattributedDecorator(IUnattributedDecorated inner, SingletonService singleton) : IUnattributedDecorated
+{
+    public IUnattributedDecorated Inner => inner;
     public SingletonService Singleton => singleton;
 }

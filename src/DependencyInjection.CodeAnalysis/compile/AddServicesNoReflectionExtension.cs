@@ -182,121 +182,123 @@ namespace Microsoft.Extensions.DependencyInjection
             where TDecorated : class
             where TDecorator : class, TDecorated
         {
-            var descriptors = services
-                .Select((descriptor, index) => new { descriptor, index })
-                .Where(x =>
-                    !x.descriptor.IsKeyedService &&
-                    x.descriptor.ServiceType == typeof(TDecorated) &&
-                    GetImplementationType(x.descriptor) != typeof(TDecorator))
-                .ToArray();
-
-            if (descriptors.Length == 0)
-            {
-                throw new InvalidOperationException(
-                    $"No service registration for {typeof(TDecorated)} was found. Call AddServices before Decorate, or register the decorated service before decorating it.");
-            }
-
-            foreach (var item in descriptors)
-            {
-                services[item.index] = ServiceDescriptor.Describe(
-                    typeof(TDecorated),
-                    provider => factory(provider, item.descriptor),
-                    item.descriptor.Lifetime);
-            }
+            DecorateDescriptors<TDecorated, TDecorator>(services, null, (sp, _, sd) => factory(sp, sd));
         }
 
-        static void DecorateKeyedDescriptors<TDecorated, TDecorator>(
+        static void DecorateDescriptors<TDecorated, TDecorator>(
             IServiceCollection services,
             object? key,
             Func<IServiceProvider, object?, ServiceDescriptor, TDecorated> factory)
             where TDecorated : class
             where TDecorator : class, TDecorated
         {
+            bool isKeyed = key is not null;
+
             var descriptors = services
                 .Select((descriptor, index) => new { descriptor, index })
                 .Where(x =>
-                    x.descriptor.IsKeyedService &&
+                    x.descriptor.IsKeyedService == isKeyed &&
                     x.descriptor.ServiceType == typeof(TDecorated) &&
-                    Equals(x.descriptor.ServiceKey, key) &&
+                    (!isKeyed || Equals(x.descriptor.ServiceKey, key)) &&
                     GetImplementationType(x.descriptor) != typeof(TDecorator))
                 .ToArray();
 
             if (descriptors.Length == 0)
             {
-                throw new InvalidOperationException(
-                    $"No keyed service registration for {typeof(TDecorated)} with key '{key}' was found. Call AddServices before Decorate, or register the decorated service before decorating it.");
+                throw new InvalidOperationException(isKeyed
+                    ? $"No keyed service registration for {typeof(TDecorated)} with key '{key}' was found. Call AddServices before Decorate, or register the decorated service before decorating it."
+                    : $"No service registration for {typeof(TDecorated)} was found. Call AddServices before Decorate, or register the decorated service before decorating it.");
             }
 
             foreach (var item in descriptors)
             {
-                services[item.index] = ServiceDescriptor.DescribeKeyed(
-                    typeof(TDecorated),
-                    key,
-                    (provider, serviceKey) => factory(provider, serviceKey, item.descriptor),
-                    item.descriptor.Lifetime);
+                if (!isKeyed)
+                {
+                    services[item.index] = ServiceDescriptor.Describe(
+                        typeof(TDecorated),
+                        provider => factory(provider, null, item.descriptor),
+                        item.descriptor.Lifetime);
+                }
+                else
+                {
+                    services[item.index] = ServiceDescriptor.DescribeKeyed(
+                        typeof(TDecorated),
+                        key,
+                        (provider, serviceKey) => factory(provider, serviceKey, item.descriptor),
+                        item.descriptor.Lifetime);
+                }
             }
         }
 
+
+
         static TDecorated GetDecorated<TDecorated>(IServiceProvider provider, ServiceDescriptor descriptor)
             where TDecorated : class
+            => GetDecoratedCore<TDecorated>(provider, null, descriptor);
+
+        static TDecorated GetKeyedDecorated<TDecorated>(IServiceProvider provider, object? key, ServiceDescriptor descriptor)
+            where TDecorated : class
+            => GetDecoratedCore<TDecorated>(provider, key, descriptor);
+
+        static TDecorated GetDecoratedCore<TDecorated>(IServiceProvider provider, object? key, ServiceDescriptor descriptor)
+            where TDecorated : class
         {
+            bool isKeyed = key is not null;
+
+            if (isKeyed)
+            {
+                if (!descriptor.IsKeyedService)
+                    throw new InvalidOperationException($"Non-keyed service registrations for {typeof(TDecorated)} cannot be decorated by this overload.");
+            }
+            else
+            {
+                if (descriptor.IsKeyedService)
+                    throw new InvalidOperationException($"Keyed service registrations for {typeof(TDecorated)} cannot be decorated by this overload.");
+            }
+
             object? service;
 
             if (descriptor.IsKeyedService)
             {
-                throw new InvalidOperationException($"Keyed service registrations for {typeof(TDecorated)} cannot be decorated by this overload.");
-            }
-
-            if (descriptor.ImplementationInstance != null)
-            {
-                service = descriptor.ImplementationInstance;
-            }
-            else if (descriptor.ImplementationFactory != null)
-            {
-                service = descriptor.ImplementationFactory(provider);
-            }
-            else if (descriptor.ImplementationType != null)
-            {
-                service = ActivatorUtilities.GetServiceOrCreateInstance(provider, descriptor.ImplementationType);
+                if (descriptor.KeyedImplementationInstance != null)
+                {
+                    service = descriptor.KeyedImplementationInstance;
+                }
+                else if (descriptor.KeyedImplementationFactory != null)
+                {
+                    service = descriptor.KeyedImplementationFactory(provider, key);
+                }
+                else if (descriptor.KeyedImplementationType != null)
+                {
+                    service = ActivatorUtilities.GetServiceOrCreateInstance(provider, descriptor.KeyedImplementationType);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported keyed service registration for {typeof(TDecorated)}.");
+                }
             }
             else
             {
-                throw new InvalidOperationException($"Unsupported service registration for {typeof(TDecorated)}.");
+                if (descriptor.ImplementationInstance != null)
+                {
+                    service = descriptor.ImplementationInstance;
+                }
+                else if (descriptor.ImplementationFactory != null)
+                {
+                    service = descriptor.ImplementationFactory(provider);
+                }
+                else if (descriptor.ImplementationType != null)
+                {
+                    service = ActivatorUtilities.GetServiceOrCreateInstance(provider, descriptor.ImplementationType);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported service registration for {typeof(TDecorated)}.");
+                }
             }
 
             return service as TDecorated ??
                 throw new InvalidOperationException($"The decorated registration did not produce an instance of {typeof(TDecorated)}.");
-        }
-
-        static TDecorated GetKeyedDecorated<TDecorated>(IServiceProvider provider, object? key, ServiceDescriptor descriptor)
-            where TDecorated : class
-        {
-            object? service;
-
-            if (!descriptor.IsKeyedService)
-            {
-                throw new InvalidOperationException($"Non-keyed service registrations for {typeof(TDecorated)} cannot be decorated by this overload.");
-            }
-
-            if (descriptor.KeyedImplementationInstance != null)
-            {
-                service = descriptor.KeyedImplementationInstance;
-            }
-            else if (descriptor.KeyedImplementationFactory != null)
-            {
-                service = descriptor.KeyedImplementationFactory(provider, key);
-            }
-            else if (descriptor.KeyedImplementationType != null)
-            {
-                service = ActivatorUtilities.GetServiceOrCreateInstance(provider, descriptor.KeyedImplementationType);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Unsupported keyed service registration for {typeof(TDecorated)}.");
-            }
-
-            return service as TDecorated ??
-                throw new InvalidOperationException($"The decorated keyed registration did not produce an instance of {typeof(TDecorated)}.");
         }
 
         static Type? GetImplementationType(ServiceDescriptor descriptor)

@@ -13,39 +13,6 @@ namespace Tests.CodeAnalysis;
 public class DecorateGeneratorTests(ITestOutputHelper Output)
 {
     [Fact]
-    public async Task ErrorIfDecoratorIsNotService()
-    {
-        var test = CreateTest(
-            """
-            using Microsoft.Extensions.DependencyInjection;
-
-            public interface IFoo { }
-
-            [Service]
-            public class Foo : IFoo { }
-
-            public class FooDecorator(IFoo inner) : IFoo { }
-
-            public static class Program
-            {
-                public static void Main()
-                {
-                    var services = new ServiceCollection();
-                    services.AddServices();
-                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
-                }
-            }
-            """);
-
-        test.ExpectedDiagnostics.Add(
-            Verifier.Diagnostic(IncrementalGenerator.DecoratorMustBeService)
-                .WithLocation(0)
-                .WithArguments("FooDecorator"));
-
-        await test.RunAsync();
-    }
-
-    [Fact]
     public async Task ErrorIfDecoratorLifetimeIsIncompatible()
     {
         var test = CreateTest(
@@ -143,6 +110,36 @@ public class DecorateGeneratorTests(ITestOutputHelper Output)
             }
             """);
 
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task NoErrorIfDecoratorHasNoServiceAttribute()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service]
+            public class Foo : IFoo { }
+
+            // Decorator intentionally has NO [Service] attribute
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>();
+                }
+            }
+            """);
+
+        // No diagnostics expected — decorator no longer requires [Service]
         await test.RunAsync();
     }
 
