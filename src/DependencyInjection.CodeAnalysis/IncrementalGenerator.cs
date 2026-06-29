@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
+using DecoratedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TDecorated, Microsoft.CodeAnalysis.INamedTypeSymbol TDecorator, bool IsKeyed, bool HasKeyValue, object? KeyValue, Microsoft.CodeAnalysis.Location? Location);
 using KeyedService = (Microsoft.CodeAnalysis.INamedTypeSymbol TImplementation, Microsoft.CodeAnalysis.INamedTypeSymbol? TService, Microsoft.CodeAnalysis.TypedConstant? Key);
 
 namespace Devlooped.Extensions.DependencyInjection;
@@ -28,6 +29,24 @@ public class IncrementalGenerator : IIncrementalGenerator
         "More than one registration matches {0} with lifetimes {1}.",
         "Build",
         DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor DecoratorLifetimeIncompatible { get; } =
+        new DiagnosticDescriptor(
+        "DDI007",
+        "Decorator lifetime is incompatible with decorated services.",
+        "Decorator type {0} has lifetime {1}, which is incompatible with decorated service {2} lifetimes {3}.",
+        "Build",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor DecoratorConstructorMissing { get; } =
+        new DiagnosticDescriptor(
+        "DDI008",
+        "Decorator constructor must accept the decorated service.",
+        "Decorator type {0} must have an accessible constructor with exactly one parameter of type {1}; additional dependencies are allowed.",
+        "Build",
+        DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     class ServiceSymbol(INamedTypeSymbol implementation, int lifetime, TypedConstant? key, Location? location, INamedTypeSymbol? service)
@@ -66,6 +85,8 @@ public class IncrementalGenerator : IIncrementalGenerator
         public Regex Regex => (regex ??= FullNameExpression is not null ? new(FullNameExpression) : new(".*"));
     }
 
+    record ServiceAttributeInfo(int Lifetime, TypedConstant? Key, INamedTypeSymbol? ServiceType, Location? Location);
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var types = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider).SelectMany((x, c) =>
@@ -92,28 +113,6 @@ public class IncrementalGenerator : IIncrementalGenerator
             return visitor.TypeSymbols.Where(t => !t.IsAbstract && t.TypeKind == TypeKind.Class);
         });
 
-        bool IsService(AttributeData attr) =>
-            (attr.AttributeClass?.Name == "ServiceAttribute" || attr.AttributeClass?.Name == "Service") &&
-            attr.ConstructorArguments.Length == 1 &&
-            attr.ConstructorArguments[0].Kind == TypedConstantKind.Enum &&
-            attr.ConstructorArguments[0].Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Microsoft.Extensions.DependencyInjection.ServiceLifetime";
-
-        bool IsKeyedService(AttributeData attr) =>
-            (attr.AttributeClass?.Name == "ServiceAttribute" || attr.AttributeClass?.Name == "Service" ||
-             attr.AttributeClass?.Name == "KeyedService" || attr.AttributeClass?.Name == "KeyedServiceAttribute") &&
-            //attr.AttributeClass?.IsGenericType == true &&
-            attr.ConstructorArguments.Length == 2 &&
-            attr.ConstructorArguments[1].Kind == TypedConstantKind.Enum &&
-            attr.ConstructorArguments[1].Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Microsoft.Extensions.DependencyInjection.ServiceLifetime";
-
-        bool IsExport(AttributeData attr)
-        {
-            var attrName = attr.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return attrName == "global::System.Composition.ExportAttribute" ||
-                attrName == "global::System.ComponentModel.Composition.ExportAttribute";
-        }
-        ;
-
         // NOTE: we recognize the attribute by name, not precise type. This makes the generator 
         // more flexible and avoids requiring any sort of run-time dependency.
 
@@ -129,8 +128,8 @@ public class IncrementalGenerator : IIncrementalGenerator
 
                 foreach (var attr in attrs)
                 {
-                    var serviceAttr = IsService(attr) || IsKeyedService(attr) ? attr : null;
-                    if (serviceAttr == null && !IsExport(attr))
+                    var serviceAttr = IsServiceAttribute(attr) || IsKeyedServiceAttribute(attr) ? attr : null;
+                    if (serviceAttr == null && !IsExportAttribute(attr))
                         continue;
 
                     TypedConstant? key = default;
@@ -139,7 +138,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                     var lifetime = serviceAttr != null ? 0 : 2;
                     if (serviceAttr != null)
                     {
-                        if (IsKeyedService(serviceAttr))
+                        if (IsKeyedServiceAttribute(serviceAttr))
                         {
                             key = serviceAttr.ConstructorArguments[0];
                             lifetime = (int)serviceAttr.ConstructorArguments[1].Value!;
@@ -149,7 +148,7 @@ public class IncrementalGenerator : IIncrementalGenerator
                             lifetime = (int)serviceAttr.ConstructorArguments[0].Value!;
                         }
                     }
-                    else if (IsExport(attr))
+                    else if (IsExportAttribute(attr))
                     {
                         // In NuGet MEF, [Shared] makes exports singleton
                         if (attrs.Any(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.Composition.SharedAttribute"))
@@ -216,6 +215,20 @@ public class IncrementalGenerator : IIncrementalGenerator
             .Select((x, _) => x.Left)
             .Collect();
 
+        var decorations = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is InvocationExpressionSyntax invocation && GetInvokedMethodName(invocation) == "Decorate",
+                transform: static (ctx, cancellation) => GetDecoration((InvocationExpressionSyntax)ctx.Node, ctx.SemanticModel, cancellation))
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Where(x =>
+            {
+                (var decoration, var options) = x;
+                return options.GlobalOptions.TryGetValue("build_property.AddServicesExtension", out var value) &&
+                    bool.TryParse(value, out var addServices) && addServices && decoration is not null;
+            })
+            .Select((x, _) => x.Left!.Value)
+            .Collect();
+
         // Project matching service types to register with the given lifetime.
         var conventionServices = types.Combine(methodInvocations.Combine(context.CompilationProvider)).SelectMany((pair, cancellationToken) =>
         {
@@ -245,36 +258,52 @@ public class IncrementalGenerator : IIncrementalGenerator
             .SelectMany((tuple, _) => ImmutableArray.CreateRange([tuple.Item1, tuple.Item2]))
             .SelectMany((items, _) => items.Distinct().ToImmutableArray());
 
-        RegisterServicesOutput(context, finalServices, context.CompilationProvider);
+        RegisterServicesOutput(context, finalServices, decorations, context.CompilationProvider);
+        RegisterDecorateOutput(context, decorations, finalServices.Collect(), context.CompilationProvider);
     }
 
-    void RegisterServicesOutput(IncrementalGeneratorInitializationContext context, IncrementalValuesProvider<ServiceSymbol> services, IncrementalValueProvider<Compilation> compilation)
+    void RegisterServicesOutput(
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValuesProvider<ServiceSymbol> services,
+        IncrementalValueProvider<ImmutableArray<DecoratedService>> decorations,
+        IncrementalValueProvider<Compilation> compilation)
     {
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 0 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddSingleton", ctx, data));
+            services.Where(x => x!.Lifetime == 0 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddSingleton", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 1 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddScoped", ctx, data));
+            services.Where(x => x!.Lifetime == 1 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddScoped", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 2 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddTransient", ctx, data));
+            services.Where(x => x!.Lifetime == 2 && x.Key is null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, null)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddTransient", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 0 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddKeyedSingleton", ctx, data));
+            services.Where(x => x!.Lifetime == 0 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddKeyedSingleton", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 1 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddKeyedScoped", ctx, data));
+            services.Where(x => x!.Lifetime == 1 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddKeyedScoped", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(
-            services.Where(x => x!.Lifetime == 2 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(compilation),
-            (ctx, data) => AddPartial("AddKeyedTransient", ctx, data));
+            services.Where(x => x!.Lifetime == 2 && x.Key is not null).Select((x, _) => new KeyedService(x!.TImplementation, x!.TService, x.Key!)).Collect().Combine(decorations).Combine(compilation),
+            (ctx, data) => AddPartial("AddKeyedTransient", ctx, (data.Left.Left, data.Left.Right, data.Right)));
 
         context.RegisterImplementationSourceOutput(services.Collect(), ReportInconsistencies);
+    }
+
+    void RegisterDecorateOutput(
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<ImmutableArray<DecoratedService>> decorations,
+        IncrementalValueProvider<ImmutableArray<ServiceSymbol>> services,
+        IncrementalValueProvider<Compilation> compilation)
+    {
+        context.RegisterImplementationSourceOutput(
+            decorations.Combine(services).Combine(compilation),
+            (ctx, data) => AddDecoratePartial(ctx, data.Left.Left, data.Left.Right, data.Right));
     }
 
     void ReportInconsistencies(SourceProductionContext context, ImmutableArray<ServiceSymbol> array)
@@ -303,6 +332,313 @@ public class IncrementalGenerator : IIncrementalGenerator
             }
         }
     }
+
+    void AddDecoratePartial(
+        SourceProductionContext ctx,
+        ImmutableArray<DecoratedService> decorations,
+        ImmutableArray<ServiceSymbol> services,
+        Compilation compilation)
+    {
+        if (decorations.IsEmpty)
+            return;
+
+        var validDecorations = ImmutableArray.CreateBuilder<(DecoratedService Decoration, IMethodSymbol Constructor)>();
+
+        foreach (var decoration in decorations)
+        {
+            if (!ValidateDecoration(ctx, decoration, services, compilation, out var constructor))
+                continue;
+
+            validDecorations.Add((decoration, constructor!));
+        }
+
+        if (validDecorations.Count == 0)
+            return;
+
+        var builder = new StringBuilder()
+            .AppendLine("// <auto-generated />")
+            .AppendLine("#nullable enable");
+
+        foreach (var alias in compilation.References.SelectMany(r => r.Properties.Aliases))
+        {
+            builder.AppendLine($"extern alias {alias};");
+        }
+
+        builder.AppendLine(
+          """
+            using System;
+            
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                static partial class AddServicesNoReflectionExtension
+                {
+                    static partial void DecorateServices<TDecorated, TDecorator>(IServiceCollection services)
+                        where TDecorated : class
+                        where TDecorator : class, TDecorated
+                    {
+            """);
+
+        // Emit non-keyed dispatch
+        for (var i = 0; i < validDecorations.Count; i++)
+        {
+            var (decoration, _) = validDecorations[i];
+            if (decoration.IsKeyed)
+                continue;
+
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            var decorator = decoration.TDecorator.ToFullName(compilation);
+
+            builder.AppendLine($"            if (typeof(TDecorated) == typeof({decorated}) && typeof(TDecorator) == typeof({decorator}))");
+            builder.AppendLine("            {");
+            builder.AppendLine($"                DecorateDescriptors<{decorated}, {decorator}>(services, CreateDecorator{i});");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
+        builder.AppendLine(
+          """
+                    }
+
+                    static partial void DecorateKeyedServices<TDecorated, TDecorator>(IServiceCollection services, object? key)
+                        where TDecorated : class
+                        where TDecorator : class, TDecorated
+                    {
+            """);
+
+        // Emit keyed dispatch
+        for (var i = 0; i < validDecorations.Count; i++)
+        {
+            var (decoration, _) = validDecorations[i];
+            if (!decoration.IsKeyed)
+                continue;
+
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            var decorator = decoration.TDecorator.ToFullName(compilation);
+
+            builder.AppendLine($"            if (typeof(TDecorated) == typeof({decorated}) && typeof(TDecorator) == typeof({decorator}))");
+            builder.AppendLine("            {");
+            builder.AppendLine($"                DecorateDescriptors<{decorated}, {decorator}>(services, key, CreateKeyedDecorator{i});");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
+        builder.AppendLine(
+          """
+                    }
+            """);
+
+        // Helper to build constructor arguments for a decorator factory.
+        // Handles the special case for the decorated service parameter and [FromKeyedServices].
+        string BuildDecoratorArgs((DecoratedService Decoration, IMethodSymbol Constructor) entry, Compilation compilation, bool isKeyed)
+        {
+            var (decoration, ctor) = entry;
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            bool usedDecorated = false;
+
+            return string.Join(", ", ctor.Parameters.Select(p =>
+            {
+                if (!usedDecorated && SymbolEqualityComparer.Default.Equals(p.Type, decoration.TDecorated))
+                {
+                    usedDecorated = true;
+                    return isKeyed
+                        ? $"GetKeyedDecorated<{decorated}>(s, key, descriptor)"
+                        : $"GetDecorated<{decorated}>(s, descriptor)";
+                }
+
+                var fromKeyed = p.GetAttributes().FirstOrDefault(IsFromKeyed);
+                if (fromKeyed is not null)
+                    return $"s.GetRequiredKeyedService<{p.Type.ToFullName(compilation)}>({fromKeyed.ConstructorArguments[0].ToCSharpString()})";
+
+                return $"s.GetRequiredService<{p.Type.ToFullName(compilation)}>()";
+            }));
+        }
+
+        // Emit non-keyed factory methods
+        for (var i = 0; i < validDecorations.Count; i++)
+        {
+            var (decoration, ctor) = validDecorations[i];
+            if (decoration.IsKeyed)
+                continue;
+
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            var decorator = decoration.TDecorator.ToFullName(compilation);
+            var args = BuildDecoratorArgs((decoration, ctor), compilation, isKeyed: false);
+
+            builder.AppendLine();
+            builder.AppendLine($"        static {decorated} CreateDecorator{i}(IServiceProvider s, ServiceDescriptor descriptor)");
+            builder.AppendLine($"            => new {decorator}({args});");
+        }
+
+        // Emit keyed factory methods
+        for (var i = 0; i < validDecorations.Count; i++)
+        {
+            var (decoration, ctor) = validDecorations[i];
+            if (!decoration.IsKeyed)
+                continue;
+
+            var decorated = decoration.TDecorated.ToFullName(compilation);
+            var decorator = decoration.TDecorator.ToFullName(compilation);
+            var args = BuildDecoratorArgs((decoration, ctor), compilation, isKeyed: true);
+
+            builder.AppendLine();
+            builder.AppendLine($"        static {decorated} CreateKeyedDecorator{i}(IServiceProvider s, object? key, ServiceDescriptor descriptor)");
+            builder.AppendLine($"            => new {decorator}({args});");
+        }
+
+        builder.AppendLine(
+        """
+                }
+            }
+            """);
+
+        ctx.AddSource("Decorate.g", builder.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
+    }
+
+    bool ValidateDecoration(
+        SourceProductionContext ctx,
+        DecoratedService decoration,
+        ImmutableArray<ServiceSymbol> services,
+        Compilation compilation,
+        out IMethodSymbol? constructor)
+    {
+        constructor = GetDecoratorConstructor(decoration, compilation);
+        var isValid = true;
+        var decoratorLifetimes = GetDecoratorLifetimes(decoration, compilation);
+
+        var decoratedLifetimes = GetDecoratedLifetimes(decoration, services, compilation);
+        if (!decoratorLifetimes.IsEmpty && !decoratedLifetimes.IsEmpty &&
+            (decoratorLifetimes.Length != 1 || decoratedLifetimes.Any(x => x != decoratorLifetimes[0])))
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                DecoratorLifetimeIncompatible,
+                decoration.Location,
+                decoration.TDecorator.ToDisplayString(),
+                string.Join(", ", decoratorLifetimes.Select(LifetimeName)),
+                decoration.TDecorated.ToDisplayString(),
+                string.Join(", ", decoratedLifetimes.Select(LifetimeName))));
+            isValid = false;
+        }
+
+        if (constructor is null)
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                DecoratorConstructorMissing,
+                decoration.Location,
+                decoration.TDecorator.ToDisplayString(),
+                decoration.TDecorated.ToDisplayString()));
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    static ImmutableArray<int> GetDecoratorLifetimes(DecoratedService decoration, Compilation compilation)
+    {
+        return GetServiceAttributes(decoration.TDecorator)
+            .Where(x => IsMatchingDecoratorAttribute(decoration, x))
+            .Where(x =>
+                x.ServiceType is null ?
+                    compilation.HasImplicitConversion(decoration.TDecorator, decoration.TDecorated) :
+                    SymbolEqualityComparer.Default.Equals(x.ServiceType, decoration.TDecorated))
+            .Select(x => x.Lifetime)
+            .Distinct()
+            .ToImmutableArray();
+    }
+
+    static ImmutableArray<int> GetDecoratedLifetimes(DecoratedService decoration, ImmutableArray<ServiceSymbol> services, Compilation compilation)
+    {
+        return services
+            .Where(x => decoration.IsKeyed ? x.Key is not null : x.Key is null)
+            .Where(x => !decoration.IsKeyed || !decoration.HasKeyValue || Equals(x.Key?.Value, decoration.KeyValue))
+            .Where(x => !SymbolEqualityComparer.Default.Equals(x.TImplementation, decoration.TDecorator))
+            .Where(x =>
+                x.TService is null ?
+                    compilation.HasImplicitConversion(x.TImplementation, decoration.TDecorated) :
+                    SymbolEqualityComparer.Default.Equals(x.TService, decoration.TDecorated))
+            .Select(x => x.Lifetime)
+            .Distinct()
+            .ToImmutableArray();
+    }
+
+    static bool IsMatchingDecoratorAttribute(DecoratedService decoration, ServiceAttributeInfo attribute) =>
+        decoration.IsKeyed || attribute.Key is null;
+
+    IMethodSymbol? GetDecoratorConstructor(DecoratedService decoration, Compilation compilation)
+    {
+        var candidates = decoration.TDecorator.InstanceConstructors
+            .Where(x => compilation.IsSymbolAccessible(x))
+            .Where(x => x.Parameters.Count(p => SymbolEqualityComparer.Default.Equals(p.Type, decoration.TDecorated)) == 1)
+            .ToImmutableArray();
+
+        if (candidates.IsDefaultOrEmpty)
+            return null;
+
+        return candidates.FirstOrDefault(HasImportingConstructor) ??
+            candidates.OrderByDescending(m => m.Parameters.Length).FirstOrDefault();
+    }
+
+    static bool HasImportingConstructor(IMethodSymbol method) =>
+        method.GetAttributes().Any(a =>
+            a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.Composition.ImportingConstructorAttribute" ||
+            a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.ComponentModel.Composition.ImportingConstructorAttribute");
+
+    static bool IsDecoratorServiceAlias(INamedTypeSymbol implementation, INamedTypeSymbol service, bool keyed, ImmutableArray<DecoratedService> decorations) =>
+        decorations.Any(x =>
+            x.IsKeyed == keyed &&
+            SymbolEqualityComparer.Default.Equals(x.TDecorator, implementation) &&
+            SymbolEqualityComparer.Default.Equals(x.TDecorated, service));
+
+    static ImmutableArray<ServiceAttributeInfo> GetServiceAttributes(INamedTypeSymbol type)
+    {
+        var builder = ImmutableArray.CreateBuilder<ServiceAttributeInfo>();
+
+        foreach (var attr in type.GetAttributes())
+        {
+            if (!IsServiceAttribute(attr) && !IsKeyedServiceAttribute(attr))
+                continue;
+
+            var lifetime = IsKeyedServiceAttribute(attr) ?
+                (int)attr.ConstructorArguments[1].Value! :
+                (int)attr.ConstructorArguments[0].Value!;
+            var key = IsKeyedServiceAttribute(attr) ? attr.ConstructorArguments[0] : (TypedConstant?)null;
+            var serviceType = attr.AttributeClass?.IsGenericType == true &&
+                attr.AttributeClass.TypeArguments.Length == 1 &&
+                attr.AttributeClass.TypeArguments[0] is INamedTypeSymbol namedService ?
+                namedService :
+                null;
+
+            builder.Add(new ServiceAttributeInfo(
+                lifetime,
+                key,
+                serviceType,
+                attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
+        }
+
+        return builder.ToImmutable();
+    }
+
+    static bool IsServiceAttribute(AttributeData attr) =>
+        (attr.AttributeClass?.Name == "ServiceAttribute" || attr.AttributeClass?.Name == "Service") &&
+        attr.ConstructorArguments.Length == 1 &&
+        attr.ConstructorArguments[0].Kind == TypedConstantKind.Enum &&
+        attr.ConstructorArguments[0].Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Microsoft.Extensions.DependencyInjection.ServiceLifetime";
+
+    static bool IsKeyedServiceAttribute(AttributeData attr) =>
+        (attr.AttributeClass?.Name == "ServiceAttribute" || attr.AttributeClass?.Name == "Service" ||
+         attr.AttributeClass?.Name == "KeyedService" || attr.AttributeClass?.Name == "KeyedServiceAttribute") &&
+        attr.ConstructorArguments.Length == 2 &&
+        attr.ConstructorArguments[1].Kind == TypedConstantKind.Enum &&
+        attr.ConstructorArguments[1].Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Microsoft.Extensions.DependencyInjection.ServiceLifetime";
+
+    static bool IsExportAttribute(AttributeData attr)
+    {
+        var attrName = attr.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        return attrName == "global::System.Composition.ExportAttribute" ||
+            attrName == "global::System.ComponentModel.Composition.ExportAttribute";
+    }
+
+    static string LifetimeName(int lifetime) =>
+        lifetime switch { 0 => "Singleton", 1 => "Scoped", 2 => "Transient", _ => "Unknown" };
 
     static string? GetInvokedMethodName(InvocationExpressionSyntax invocation) => invocation.Expression switch
     {
@@ -362,7 +698,40 @@ public class IncrementalGenerator : IIncrementalGenerator
         return null;
     }
 
-    void AddPartial(string methodName, SourceProductionContext ctx, (ImmutableArray<KeyedService> Types, Compilation Compilation) data)
+    static DecoratedService? GetDecoration(InvocationExpressionSyntax invocation, SemanticModel semanticModel, CancellationToken cancellation)
+    {
+        var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellation);
+        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+            return null;
+
+        if (!HasMethodAttribute(methodSymbol, "DDIDecorateAttribute"))
+            return null;
+
+        if (methodSymbol.TypeArguments.Length != 2 ||
+            methodSymbol.TypeArguments[0] is not INamedTypeSymbol decorated ||
+            methodSymbol.TypeArguments[1] is not INamedTypeSymbol decorator)
+            return null;
+
+        var isKeyed = methodSymbol.Parameters.Any(p => p.Name == "key") ||
+            methodSymbol.ReducedFrom?.Parameters.Any(p => p.Name == "key") == true;
+        var hasKeyValue = false;
+        object? keyValue = null;
+
+        if (isKeyed && invocation.ArgumentList.Arguments.Count > 0)
+        {
+            var key = semanticModel.GetConstantValue(invocation.ArgumentList.Arguments[0].Expression, cancellation);
+            hasKeyValue = key.HasValue;
+            keyValue = key.Value;
+        }
+
+        return new DecoratedService(decorated, decorator, isKeyed, hasKeyValue, keyValue, invocation.GetLocation());
+    }
+
+    static bool HasMethodAttribute(IMethodSymbol method, string attributeName) =>
+        method.GetAttributes().Any(attr => attr.AttributeClass?.Name == attributeName) ||
+        method.ReducedFrom?.GetAttributes().Any(attr => attr.AttributeClass?.Name == attributeName) == true;
+
+    void AddPartial(string methodName, SourceProductionContext ctx, (ImmutableArray<KeyedService> Types, ImmutableArray<DecoratedService> Decorations, Compilation Compilation) data)
     {
         if (data.Types.IsEmpty)
             return;
@@ -388,8 +757,8 @@ public class IncrementalGenerator : IIncrementalGenerator
                     {
             """);
 
-        AddServices(data.Types.Where(x => x.Key is null), data.Compilation, methodName, builder);
-        AddKeyedServices(data.Types.Where(x => x.Key is not null), data.Compilation, methodName, builder);
+        AddServices(data.Types.Where(x => x.Key is null), data.Decorations, data.Compilation, methodName, builder);
+        AddKeyedServices(data.Types.Where(x => x.Key is not null), data.Decorations, data.Compilation, methodName, builder);
 
         builder.AppendLine(
         """
@@ -401,7 +770,7 @@ public class IncrementalGenerator : IIncrementalGenerator
         ctx.AddSource(methodName + ".g", builder.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
     }
 
-    void AddServices(IEnumerable<KeyedService> services, Compilation compilation, string methodName, StringBuilder output)
+    void AddServices(IEnumerable<KeyedService> services, ImmutableArray<DecoratedService> decorations, Compilation compilation, string methodName, StringBuilder output)
     {
         bool isAccessible(ISymbol s) => compilation.IsSymbolAccessible(s);
 
@@ -445,6 +814,9 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             foreach (var iface in serviceTypes)
             {
+                if (IsDecoratorServiceAlias(type, iface, keyed: false, decorations))
+                    continue;
+
                 if (!compilation.HasImplicitConversion(type, iface))
                     continue;
 
@@ -492,7 +864,7 @@ public class IncrementalGenerator : IIncrementalGenerator
         }
     }
 
-    void AddKeyedServices(IEnumerable<KeyedService> services, Compilation compilation, string methodName, StringBuilder output)
+    void AddKeyedServices(IEnumerable<KeyedService> services, ImmutableArray<DecoratedService> decorations, Compilation compilation, string methodName, StringBuilder output)
     {
         bool isAccessible(ISymbol s) => compilation.IsSymbolAccessible(s);
 
@@ -537,6 +909,9 @@ public class IncrementalGenerator : IIncrementalGenerator
 
             foreach (var iface in serviceTypes)
             {
+                if (IsDecoratorServiceAlias(type, iface, keyed: true, decorations))
+                    continue;
+
                 var ifaceName = iface.ToFullName(compilation);
                 if (!registered.Contains(ifaceName))
                 {

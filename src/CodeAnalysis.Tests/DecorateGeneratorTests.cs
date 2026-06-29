@@ -1,0 +1,244 @@
+using System.Collections.Immutable;
+using System.IO;
+using System.Threading.Tasks;
+using Devlooped.Extensions.DependencyInjection;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
+using Xunit;
+using Xunit.Abstractions;
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<Devlooped.Extensions.DependencyInjection.AddServicesAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+
+namespace Tests.CodeAnalysis;
+
+public class DecorateGeneratorTests(ITestOutputHelper Output)
+{
+    [Fact]
+    public async Task ErrorIfDecoratorLifetimeIsIncompatible()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service(ServiceLifetime.Scoped)]
+            public class Foo : IFoo { }
+
+            [Service(ServiceLifetime.Singleton)]
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
+                }
+            }
+            """);
+
+        test.ExpectedDiagnostics.Add(
+            Verifier.Diagnostic(IncrementalGenerator.DecoratorLifetimeIncompatible)
+                .WithLocation(0)
+                .WithArguments("FooDecorator", "Singleton", "IFoo", "Scoped"));
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task ErrorIfDecoratorConstructorDoesNotAcceptDecoratedService()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service]
+            public class Foo : IFoo { }
+
+            [Service]
+            public class FooDecorator : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    {|#0:services.Decorate<IFoo, FooDecorator>()|};
+                }
+            }
+            """);
+
+        test.ExpectedDiagnostics.Add(
+            Verifier.Diagnostic(IncrementalGenerator.DecoratorConstructorMissing)
+                .WithLocation(0)
+                .WithArguments("FooDecorator", "IFoo"));
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task NoErrorIfDecoratorConstructorHasOtherDependencies()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+            public interface IOtherDependency { }
+
+            [Service]
+            public class Foo : IFoo { }
+
+            [Service]
+            public class OtherDependency : IOtherDependency { }
+
+            [Service]
+            public class FooDecorator(IFoo inner, IOtherDependency other) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>();
+                }
+            }
+            """);
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task NoErrorIfDecoratorHasNoServiceAttribute()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service]
+            public class Foo : IFoo { }
+
+            // Decorator intentionally has NO [Service] attribute
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>();
+                }
+            }
+            """);
+
+        // No diagnostics expected — decorator no longer requires [Service]
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task NoErrorIfKeyedDecoratorLifetimeMatchesSelectedKey()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class Foo : IFoo { }
+
+            [Service("bar", ServiceLifetime.Singleton)]
+            public class OtherFoo : IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    services.Decorate<IFoo, FooDecorator>("foo");
+                }
+            }
+            """);
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public async Task ErrorIfKeyedDecoratorLifetimeIsIncompatible()
+    {
+        var test = CreateTest(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+
+            public interface IFoo { }
+
+            [Service("foo", ServiceLifetime.Scoped)]
+            public class Foo : IFoo { }
+
+            [Service("foo", ServiceLifetime.Singleton)]
+            public class FooDecorator(IFoo inner) : IFoo { }
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+                    services.AddServices();
+                    {|#0:services.Decorate<IFoo, FooDecorator>("foo")|};
+                }
+            }
+            """);
+
+        test.ExpectedDiagnostics.Add(
+            Verifier.Diagnostic(IncrementalGenerator.DecoratorLifetimeIncompatible)
+                .WithLocation(0)
+                .WithArguments("FooDecorator", "Singleton", "IFoo", "Scoped"));
+
+        await test.RunAsync();
+    }
+
+    static CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier> CreateTest(string source)
+    {
+        return new CSharpSourceGeneratorTest<IncrementalGenerator, DefaultVerifier>
+        {
+            TestBehaviors = TestBehaviors.SkipGeneratedSourcesCheck,
+            TestCode = source,
+            TestState =
+            {
+                AnalyzerConfigFiles =
+                {
+                    ("/.editorconfig",
+                    """
+                    is_global = true
+                    build_property.AddServicesExtension = true
+                    """)
+                },
+                Sources =
+                {
+                    ThisAssembly.Resources.AddServicesNoReflectionExtension.Text,
+                    ThisAssembly.Resources.ServiceAttribute.Text,
+                    ThisAssembly.Resources.ServiceAttribute_1.Text
+                },
+                ReferenceAssemblies = new ReferenceAssemblies(
+                    "net8.0",
+                    new PackageIdentity(
+                        "Microsoft.NETCore.App.Ref", "8.0.0"),
+                        Path.Combine("ref", "net8.0"))
+                    .AddPackages(ImmutableArray.Create(
+                        new PackageIdentity("Microsoft.Extensions.DependencyInjection", "8.0.0")))
+            },
+        }.WithPreprocessorSymbols();
+    }
+}
