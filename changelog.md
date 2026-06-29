@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2.4.0](https://github.com/devlooped/DependencyInjection/tree/v2.4.0) (2026-06-29)
+
+[Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.3.1...v2.4.0)
+
+:sparkles: Implemented enhancements:
+
+- Add Decorate\<TDecorated, TDecorator\> support [\#325](https://github.com/devlooped/DependencyInjection/pull/325) (@kzu)
+
+:hammer: Other:
+
+- Add Decorate extension method [\#215](https://github.com/devlooped/DependencyInjection/issues/215)
+
+:twisted_rightwards_arrows: Merged:
+
+- Bump non-Roslyn dependencies [\#327](https://github.com/devlooped/DependencyInjection/pull/327) (@kzu)
+- Set up Cursor Cloud development environment [\#326](https://github.com/devlooped/DependencyInjection/pull/326) (@kzu)
+
 ## [v2.3.1](https://github.com/devlooped/DependencyInjection/tree/v2.3.1) (2025-12-22)
 
 [Full Changelog](https://github.com/devlooped/DependencyInjection/compare/v2.3.0...v2.3.1)
